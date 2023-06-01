@@ -1,0 +1,17 @@
+\section{Préliminaires}
+Pour rappel, l'ensemble des termes utilisés dans cette notice est défini dans le document de \texttt{Spécification Technique des Besoins} (STB)
+
+Dans le cadre de notre projet, nous avons dû mettre en place deux serveurs pour héberger nos différents outils. Le premier serveur contient la partie \texttt{Gestion} avec l'ensemble des outils administratifs et le second, la partie \texttt{Scan}.
+Les deux serveurs sont accessibles en \texttt{HTTPS} avec les adresses :
+\begin{minted}{bash}
+# Serveur de Gestion
+https://srv-dpi-proj-datamatrix-srv1.univ-rouen.fr/
+
+# Serveur de Scan
+https://srv-dpi-proj-datamatrix-srv2.univ-rouen.fr/
+\end{minted} 
+\vspace{1cm}
+
+En ce qui concerne le serveur de Gestion, il faut installer un certificat délivré et signé par l'autorité \texttt{2DMP} (2DMatrix Project) afin d'accéder à l'espace de Super Administrateur. En effet, le serveur utilise un système d'authentification forte \texttt{SSL/TLS} avec vérification de certificat client.
+
+\small\textit{\textbf{Remarque} : Pour une utilisation depuis l'extérieur, il faut avoir ajouté le \texttt{VPN} pour être connecté sur le réseau du Département Informatiques de l'UFR Sciences et Techniques du Madrillet afin de pouvoir accéder à ces serveurs. De plus, il faut ajouter le certificat du département pour que la connexion soit considéré comme sécurisée.}

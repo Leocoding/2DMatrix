@@ -1,0 +1,85 @@
+\section{Sécurisation de la VM}
+Votre serveur est hébergé sur une machine virtuelle. Pour éviter qu'un attaquant puisse prendre le contrôle de votre serveur par le biais de la machine, nous allons prendre quelques dispositions pour rendre votre machine plus sûre. 
+
+\subsection{Mises à jour automatiques}
+Un serveur web étant très exposé aux risques extérieurs, il doit en permanence posséder les dernière mises à jour de sécurité.
+
+Pour cela nous pouvons mettre à jour les différents paquets disponibles sur notre VM. Pour se faire, il suffit d'utiliser les commandes suivantes :
+\begin{minted}{bash}
+admin@serveur:~$ sudo apt update
+admin@serveur:~$ sudo apt upgrade
+\end{minted}
+
+Nous pouvons mettre en place la mise à jour automatique des listes des paquets disponibles et les mises à jour de sécurité. Pour cela, installez le paquet \texttt{unattended-upgrades}\footnote{\url{https://wiki.debian.org/UnattendedUpgrades}} : 
+\begin{minted}{bash}
+admin@serveur:~$ sudo apt install unattended-upgrades
+\end{minted}
+Puis dans le fichier \texttt{/etc/apt/apt.conf.d/50unattended-upgrades}, vous retrouvez la section \texttt{Unattended-Upgrade} qui sélectionne les dépôts source des mises à jour. Par défaut, seul le dépôt de base et les dépôts de sécurité sont mis à jour.
+\begin{minted}{bash}
+Unattended-Upgrade::Allowed-Origins {
+	"${distro_id}:${distro_codename}";
+	"${distro_id}:${distro_codename}-security";
+	// Extended Security Maintenance; doesn't necessarily exist for
+	// every release and this system may not have it installed, but if
+	// available, the policy for updates is such that unattended-upgrades
+	// should also install from here by default.
+	"${distro_id}ESMApps:${distro_codename}-apps-security";
+	"${distro_id}ESM:${distro_codename}-infra-security";
+//	"${distro_id}:${distro_codename}-updates";
+//	"${distro_id}:${distro_codename}-proposed";
+//	"${distro_id}:${distro_codename}-backports";
+};
+\end{minted}
+
+Pour s'assurer de l'activation des mises à jour automatique, vérifiez le fichier
+
+\texttt{/etc/apt/apt.conf.d/20auto-upgrades} : 
+\begin{minted}{bash}
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+\end{minted}
+La première ligne exécute \texttt{apt update} et la deuxième se base sur le fichier précédemment modifier. La valeur 1 signifie que tous les jours, cela sera exécuté. Vous pourrez retrouver l'historique des mises à jour dans le fichier de log : \texttt{/var/log/unattended-upgrades}.
+
+\subsection{Les mots de passe} \label{POLITIQUE}
+Vous devez définir une politique de mot de passe, qui doit être respectée par tous les membres ayant accès au serveur. Ici nous ne verrons pas comment changer la politique de mot de passe d'Ubuntu. Mais assurez-vous d'avoir des mots de passe robuste. Nous vous conseillons d'aller consulter le site de la CNIL sur les bonnes pratiques d'un mot de passe : \\\url{https://www.cnil.fr/fr/les-conseils-de-la-cnil-pour-un-bon-mot-de-passe}
+
+\subsection{Modifier le port SSH}
+La plupart des gens utilisent le protocole SSH pour se connecter et gérer leurs serveurs distants, à l’aide d’un mot de passe. Pour accéder à un serveur via SSH, le port 22 est dédié par défaut. Il est donc automatiquement configuré lorsque vous avez installé votre système. Par conséquent, un hacker qui recherche une porte d'entrée dans le système, fera principalement ses tentatives d’attaque via ce port. \\
+En changeant le port SSH, vous limiter donc le risque d'accès non désiré. En effet, pour accéder à la machine, le port devra forcément être spécifié. L'attaquant n'ayant aucune idée de celui-ci, il devra tous les essayer. 
+
+Passons à la pratique.
+
+Sous Linux, les numéros de port inférieurs à 1024 sont réservés aux services connus et ne peuvent être liés qu'à l'utilisateur \emph{root}. Afin d'éviter des problèmes d'allocation de port à l'avenir, il est donc recommandé de choisir un port supérieur à 1024.
+\textbf{Nous prendrons ici le port 3456 comme exemple, libre à vous de choisir un port libre.} Pour découvrir si un port est libre, vous pouvez utiliser la commande nmap sur votre machine personnelle : 
+\begin{minted}{bash}
+user@client:~$ sudo nmap -p <port> <ipServeur> 
+#remplacer <port> par le port souhaité
+#remplacer <ipServeur> par l'ip de votre VM
+\end{minted}
+Si dans la colonne \texttt{SERVICE} la réponse est \texttt{UNKNOWN} alors le port est libre. \\
+
+Nous allons tout d'abord autoriser le trafic sur ce port par le par feu, nous utiliserons pour ça l'utilitaire ufw. Il est une alternative simplifiée à iptables :
+\begin{minted}{bash}
+admin@serveur:~$ sudo ufw allow 3456/tcp
+\end{minted}
+Modifions ensuite le fichier de configuration SSH. Soyez extrêmement prudent lorsque vous effectuez des modifications dans ce fichier! Une configuration incorrecte peut entraîner l'échec du démarrage du service SSH.
+\begin{minted}{bash}
+admin@serveur:~$ sudo nano /etc/ssh/sshd_config
+\end{minted}
+Recherchez la ligne \texttt{\#Port 22}. Si ce n'est pas déjà le cas, décommentez la ligne en supprimant le hachage \# et entrez votre nouveau numéro de port SSH qui sera utilisé à la place du port SSH standard 22. Dans notre exemple:
+\begin{minted}{text}
+Port 3456
+\end{minted}
+Une fois que vous avez terminé, enregistrez le fichier et redémarrez le service SSH pour appliquer les modifications : 
+\begin{minted}{bash}
+admin@serveur:~$ sudo systemctl restart ssh
+\end{minted}
+
+Après ça vous serez déconnecter de la VM, vous devrez alors vous reconnecter en SSH en précisant votre port.
+
+\begin{minted}{bash}
+user@client:~$ ssh -p 3456 <user>@<ip>
+\end{minted}
+
+
+

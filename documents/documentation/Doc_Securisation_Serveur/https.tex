@@ -1,0 +1,211 @@
+\section{Mise en place du HTTPS avec Apache2} \label{HTTPS}
+\subsection{Avant}
+Pour pouvoir passer en \texttt{HTTPS}, il faut vérifier que le module \texttt{ssl} d'Apache2 soit activé. Pour cela, on peut utiliser la commande suivante:
+\begin{minted}{bash}
+admin@serveur:~$ sudo apache2ctl -M | grep -i ssl
+\end{minted}
+Si le module est listé, alors il est activé. Sinon, on utilise les commandes suivantes pour le rendre actif et redémarrer le service apache:
+\begin{minted}{bash}
+admin@serveur:~$ sudo a2enmod ssl # pour le rendre actif 
+admin@serveur:~$ sudo systemctl restart apache2 # pour redémarrer le service
+\end{minted}
+
+Dans un deuxième temps, il faut créer un dossier pour accueillir le certificat et la clef :
+
+
+\begin{minted}{bash}
+admin@serveur:~$ sudo   mkdir /etc/apache2/certs
+\end{minted}
+
+
+
+% \subsection{création du certificat}
+% Maintenant que le module \texttt{ssl} est actif et que le dossier \texttt{/etc/apache2/certs} est créé, il faut utiliser la commande \texttt{openssl} afin de générer le certificat et la clef privée associée:
+
+%  
+%     \begin{minted}[breaklines]{bash}
+%     admin@serveur:~$ sudo  openssl req -x509 -sha256 -days 365 -out xxx.crt -newkey rsa:2048 -nodes -keyout xxx.key
+%     \end{minted}
+%  
+
+% Pour mieux comprendre cette commande et la modifier, le tableau suivant décrit chacun des différents paramètres présents.
+%  
+% \begin{tabular}{l|p{10cm}}
+%     req & permet de faire une requête de certificat\\
+%     -x509& permet de préciser la structure du certificat de sortie\\
+%     -sha256 & permet de préciser l'algorithme de hashage utilisé\\
+%     -days 365 & permet de définir la période de validité du certificat\\
+%     -out xxx.crt & permet de définir le fichier de sortie du certificat\\
+%     -newkey rsa:2048 & permet de définir le type de clef et le nombre de bits utilisé\\
+%     -nodes & permet de ne pas chiffrer la clef avec une passphrase (sinon la passphrase est demandé à chaque démarrage/redémarrage du service apache)\\
+%     -keyout xxx.key & permet de définir le fichier de sortie de la clef\\
+% \end{tabular}    
+%  
+
+
+% On rempli les informations demandées. Le champ \texttt{Common Name} doit contenir le domaine pour lequel le certificat est généré.
+
+\subsection{Récupération du certificat}
+Nous allons plus tard activer HSTS\footnote{\url{https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security}}. Cela empêche l'utilisation de certificats autosignés. Nous devons donc nous procurer une paire certificat/clef auprès d'un administrateur réseau ou d'une autorité de certification (Ex: LetsEncrypt\footnote{\url{https://letsencrypt.org/}}).
+
+Le certificat est une chaîne des certificat ayant permis de le signer (Par exemple : DPIRootCA $>$ DPIEtuCA $>$ certProjet). 
+
+Nous allons ensuite copier le certificat et la clef dans le dossier que nous avons créés précédemment (\texttt{/etc/apache2/certs}).
+
+Dans notre exemple, la chaîne de certificat s'appelera \texttt{srv.crt} et la clef \texttt{srv.key}.
+
+\subsection{Ajout du certificat dans apache2}
+
+Une fois que le certificat et la clef sont placés au bon endroit, il faut configurer Apache2 pour qu'il les prenne en compte.
+
+Pour cela, il faut créer le fichier \texttt{/etc/apache2/sites-enabled/000-default-ssl.conf} dans lequel nous allons mettre la configuration ssl du site.
+
+Dans ce fichier, il faut ajouter un hôte virtuel sur le port 443:
+ 
+\begin{minted}{text}
+<IfModule mod_ssl.c>
+<VirtualHost *:443>
+        ServerAdmin xxx@xxx.xx
+        DocumentRoot /var/www/html
+        ErrorLog ${APACHE_LOG_DIR}/error.log
+        CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+        SSLEngine on
+        SSLCertificateFile /etc/apache2/certs/srv.crt
+        SSLCertificateKeyFile /etc/apache2/certs/srv.key
+</VirtualHost>
+</IfModule>
+\end{minted}
+ 
+
+L'hôte virtuel est placé dans une balise \texttt{IfModule} afin de ne le rendre opérant que si le module \texttt{ssl}\footnote{\url{https://httpd.apache.org/docs/2.4/mod/mod\_ssl.html\#sslcertificatefile}} d'Apache2 est bien activé et éviter d'éventuelles erreurs.
+
+La description des différents champs est disponible dans le tableau suivant :
+ 
+    \begin{tabular}{l|p{10cm}}
+        ServerAdmin & Correspond à l'adresse mail de l'administrateur du serveur afin de qu'il puisse être contacté en cas de problème\\
+        DocumentRoot&Permet de définir le répertoire contenant les fichiers de l'application web\\
+        ErrorLog & Est utilisé afin de définir le fichier de log pour les erreurs\\
+        CustomLog & Identique à \texttt{ErrorLog} mais pour les autres logs\\
+        &\\
+        SSLEngine & Permet d'activer ou désactiver le moteur ssl afin d'autoriser ou non l'écriture de règles\\
+        SSLCertificateFile & Permet de renseigner le chemin vers le fichier contenant le certificat (et la chaîne)\\
+        SSLCertificateKeyFile & Identique à \texttt{SSLCertificateFile} mais pour la clef\\
+    \end{tabular}
+ 
+
+\subsection{Redémarrage du service et tests}
+Il faut maintenant redémarrer le service Apache2 pour prendre en compte les modifications apportées:
+
+\begin{minted}{bash}
+admin@serveur:~$ sudo  systemctl restart apache2
+\end{minted}
+ 
+
+Une fois le service redémarré, nous pouvons tester la connexion dans un navigateur via \texttt{HTTP} et \texttt{HTTPS}.
+
+Si la configuration a été effectuée correctement, le site est accessible via les 2 protocoles.
+
+\subsection{Mise en place de la redirection permanente vers HTTPS}
+Pour que le site ne soit accessible que via \texttt{HTTPS}, il faut effectuer une redirection lors d'une connexion via \texttt{HTTP}.
+
+Pour se faire, il faut aller modifier l'hôte virtuel contenu dans le fichier suivant afin d'y ajouter une nouvelle ligne :
+
+\texttt{/etc/apache2/site-enabled/000-default.conf} 
+ 
+\begin{minted}{text}
+<VirtualHost *:80>
+        ...
+        Redirect permanent "/" "https://xxx.xxx.xx/"
+        ...
+</VirtualHost>
+\end{minted}
+ 
+
+Cela aura pour effet de rediriger toute connexion en \texttt{HTTP}, sur \texttt{HTTPS} avec un code 301.
+
+Pour valider les modifications apportées à la configuration d'apache, il faut de nouveau redémarrer le service avec :
+ 
+\begin{minted}{bash}
+admin@serveur:~$ sudo  systemctl restart apache2
+\end{minted}
+ 
+
+Nous pouvons de nouveau tester la connexion au site depuis \texttt{HTTP} et nous devons nous rendre compte qu'une redirection vers \texttt{HTTPS} à bien été effectuée. 
+
+
+\subsection{Activation HSTS}
+La redirection mise en place à l'étape précédente permet au serveur de rediriger toute connexion \texttt{HTTP} vers une connexion \texttt{HTTPS}, mais rien n'empêche une personne malintentionnée de se placer entre le client et le serveur et d'intercepter les connexions, se qui sera transparent pour le client car il restera en \texttt{HTTP}. L'individu peut ensuite de son côté communiquer avec le serveur en \texttt{HTTPS}:
+
+\begin{center} 
+    CLIENT $\xleftrightarrow{\text{HTTP}}$ MITM $\xleftrightarrow{\text{HTTPS}}$ SERVEUR
+ \end{center}
+ 
+Cette attaque se nomme SSL Stripping\footnote{\url{https://www.ionos.fr/digitalguide/hebergement/aspects-techniques/proteger-votre-projet-web-du-ssl-stripping/}}
+
+Pour y remédier, on peut indiquer au navigateur de demander une connexion \texttt{HTTPS} à chaque fois. Cela peut se faire en utilisant \texttt{HSTS}\footnote{\url{https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security}} dans l'entête http.
+
+Pour l'activer, on doit d'abord vérifier que le module \texttt{headers} est bien activé :
+ 
+    \begin{minted}{bash}
+admin@serveur:~$ sudo  a2enmod headers    
+    \end{minted}
+ 
+
+Il suffit ensuite d'ajouter une ligne dans le fichier \texttt{/etc/apache2/conf-enabled/security.conf}:
+
+ 
+\begin{minted}[breaklines]{text}
+Header always set Strict-Transport-Security "max-age=63072000; includeSubdomains; preload"
+\end{minted}
+
+
+Cette ligne permet d'ajouter un élément au header qui sera transmis dans chaque réponse du serveur:
+ 
+    \begin{tabular}{l|p{10cm}}
+        max-age & Permet de définir le temps pour lequel sera actif HSTS\\
+        includeSubdomains&Permet d'activer HSTS pour les sous-domaines également\\
+        preload&Permet d'utiliser la liste de préchargement (liste de sites utilisée par les navigateurs pour avoir HSTS dès la première connexion)
+    \end{tabular}
+ 
+
+une fois la configuration effectuée, on peut remarquer en analysant les requêtes et les réponses au chargement de la page dans le navigateur, qu'il n'y a plus de redirection (301/302) mais que nous sommes bien en \texttt{HTTPS}. Cela signifie que c'est bien le navigateur qui a automatiquement fait la requête en \texttt{HTTPS}.
+
+\subsection{Autres configurations de sécurité}
+On peut ajouter des options de sécurité supplémentaires dans le fichier suivant:
+
+\texttt{/etc/apache2/conf-enabled/security.conf}. 
+
+Voici quelques exemples de paramètres possibles. D'autres options existent comme le contrôle du type MIME et sont disponible sur \texttt{MDN Web Docs}\footnote{\url{https://developer.mozilla.org/fr/docs/Web/HTTP/Headers\#s\%C3\%A9curit\%C3\%A9}}
+
+\subsubsection{X-Frame-Options}
+Ce paramètre du header est utilisé pour définir les limites des iframes afin d'empécher les attaques de détournement de clics (iframe invisible qui enregistre les clics sur une page). Pour cela on peut le définir à \texttt{SameOrigin} pour n'autoriser les iframes que du même domaine que le site:
+ 
+\begin{minted}{text}
+Header always set X-Frame-Options "SAMEORIGIN"    
+\end{minted}
+ 
+
+\subsubsection{Referrer-Policy}
+Cette option permet de contrôler les informations renvoyées par \texttt{Referer}.
+Afin de ne rien envoyer si la requête est faite sur des page avec une "origin" différente, on peut utiliser la valeur \texttt{same-origin}:
+ 
+\begin{minted}{bash}
+Header always set Referrer-Policy "same-origin"    
+\end{minted}
+ 
+
+\subsubsection{Sécurisation des cookies}
+Les cookies peuvent être utilisés pour effectuer des attaques XSS.
+
+Pour s'en prévenir, on peut interdire l'utilisation des cookie par JavaScript (avec l'attribut \texttt{HTTPOnly}) et également lorsque la connexion n'est pas sécurisée (avec l'attribut \texttt{Secure}) : 
+
+ 
+\begin{minted}{text}
+Header always edit Set-Cookie (.*) "$1; HTTPOnly; Secure"
+\end{minted}
+ 
+
+
+
+

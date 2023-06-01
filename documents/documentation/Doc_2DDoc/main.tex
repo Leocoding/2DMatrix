@@ -1,0 +1,90 @@
+\documentclass[oneside,12pt]{scrartcl}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{eso-pic}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{minted}
+\usepackage{xcolor}
+\usepackage{silence}
+\usepackage[hidelinks]{hyperref}
+\usepackage{arydshln}
+\usepackage{mathtools}
+\usepackage[toc]{glossaries}
+\usepackage{parskip}
+\usepackage{tikz}  
+\usepackage[T1]{fontenc}
+
+
+
+
+\newcommand*{\escape}[1]{\texttt{\textbackslash#1}}
+\newcommand{\insererText}{\textcolor{red}{[INSERER TEXTE ICI]}}
+\newcommand{\insererTextT}[1]{\insererText\ \textcolor{red}{#1}}
+\newcommand{\insererImage}{\textcolor{red}{[INSERER IMAGE ICI]}}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for the horizontal lines, change thickness here
+
+
+\usepackage{xpatch,letltxmacro}
+\LetLtxMacro{\cminted}{\minted}
+\let\endcminted\endminted
+\xpretocmd{\cminted}{\RecustomVerbatimEnvironment{Verbatim}{BVerbatim}{}}{}{}
+
+\renewcommand{\thesection}{\Roman{section}} %redefini apparence nom sections (affichage chiffres romains)
+
+\RedeclareSectionCommand[
+  tocnumwidth=1cm
+]{section}
+\RedeclareSectionCommand[
+  tocnumwidth=1.1cm
+]{subsection}
+
+\title{COMPTE-RENDU XXXX}
+\subtitle{XXXX \\ M1 Informatique}
+\author{AUTEUR}
+\date{XX/XX/2022}
+
+\AddToShipoutPicture*
+{
+\put(235,100) %(x=100, y=100)
+ {\includegraphics[scale=0.3]{imgs/logo-univ-rouen.png}}
+}
+
+\begin{document}
+
+\input{titlePage}
+\thispagestyle{empty} %pour retirer la 1ere page de la pagination
+
+\newpage
+
+\begin{center}
+\textsc{\Large \textbf{Révision du document}}
+\end{center}
+\vspace{2cm}
+\begin{center}
+\begin{tabular}{|c|c|c|}
+    \hline
+  N° de version & Date de modification & Modifications apportées  \\
+    \hline
+    1 & 12/05/2022 & Création du document\\
+    \hline
+\end{tabular}
+\end{center}
+
+\newpage
+\pagenumbering{arabic} %remet la pagination pour le sommaire
+{
+\renewcommand*\contentsname{Sommaire}
+\tableofcontents
+}
+
+\clearpage
+
+
+\printglossary[title=Glossaire,nonumberlist]
+
+
+
+\input{intro}
+
+\end{document}

@@ -1,0 +1,45 @@
+\section{2DMatrix-Scan}
+\subsection{Description de l'outil}
+L'outil de \texttt{2DMatrix-Scan} est accessible sans authentification et permet de scanner des \texttt{QRCode} de passe sanitaire, ainsi que des \texttt{2D-Doc} générés depuis l'application \texttt{2DMatrix-Create}.
+Une fois la page chargée, il est entièrement fonctionnel sans connexion.
+\subsection{Scan d'un code}
+Un code peut être scanné de 2 manières différentes :
+\begin{itemize}
+    \item à l'aide d'une caméra
+    \item directement depuis un fichier image
+\end{itemize}
+
+Une fois le code scanné, le fonctionnement de l'outil est identique, peu importe la méthode utilisée.
+
+\subsubsection{Scan depuis une caméra}
+Pour pouvoir utiliser la caméra de la machine, il faut donner la permission au navigateur de s'en servir. Pour cela, il suffit de cliquer sur le bouton \texttt{REQUEST CAMERA PERMISSIONS}, puis d'autoriser dans la pop-up ouverte par le navigateur.
+
+Si la permission est déjà donnée, il suffit de cliquer sur \texttt{START SCANNING} si la caméra n'est pas encore lancée.
+
+\subsubsection{Scan depuis un fichier}
+Pour scanner depuis un fichier, il suffit de cliquer sur \texttt{Scan an Image File} puis de sélectionner le fichier d'image voulu.
+
+\subsection{Détail des données}
+\subsubsection{Détails communs aux passes sanitaires et 2D-Doc}
+Une fois le code scanné, le contenu brut du code, ainsi qu'une vue simplifiée comportant seulement quelques informations (Ex: date du passe, nom/prénom, validité, pour les passes sanitaires) sont affichés. Pour avoir accès aux détails ainsi qu'à l'explication du traitement permettant de récupérer les données claires, il suffit de cliquer sur le bouton \texttt{Afficher} en bas de page.
+
+On retrouve dans un premier temps le détail des règles de validation du passe sanitaire/2D-Doc, suivi d'un tableau récapitulant les données contenu dans le passe sanitaire/2D-Doc scanné. Dans ce tableau, se trouvent donc les données brutes (lues directement lors du scan), ainsi que leur conversion en données claires (si nécessaire) accompagnées d'une explication.
+
+\subsubsection{Particularité pour les passes sanitaires}
+Dans le cas du passe sanitaire, les données sont converties en objet, compressées avec deflate, encodées en base45 et ne sont donc pas interprétables directement après le scan. Le détail des transformations opérées afin de pouvoir analyser le contenu du passe est afficher sous le tableau de données. Un lien permettant de s'y rendre est disponible au niveau des données brutes du passe (sous la section de scan).
+
+\subsubsection{Particularité pour les 2D-Doc}
+En cliquant sur les lignes du tableau des données contenues, la valeur brute sera surlignée dans le champ du code brut. Cela n'est possible que pour les 2D-Doc car les données d'un passe sanitaire n'apparaissent pas en clair directement après un scan.
+
+\subsection{Modification des règles de validation d'un passe sanitaire}
+Les règles de validations d'un passe sanitaire (hors authenticité des données) peuvent être modifiées. Pour cela, sous le détail des différentes règles, se trouvent des cases à cocher/champs permettant d'activer ou de désactiver certaines règles, ou bien de modifier les valeurs pour d'autres. Par exemple, il est possible de changer le nombre de doses nécessaire afin de valider les conditions sur les données.
+
+Après avoir modifié les règles, il est nécessaire de cliquer sur le bouton \texttt{APPLIQUER} afin de relancer le processus de validation.
+
+\subsection{Modification des données}
+Les données contenues dans les passes sanitaire/2D-Doc peuvent être modifiées afin de montrer le lien entre données et signature. Pour se faire, il suffit de cliquer sur le bouton \texttt{MODIFIER DONNEES}. Cela permet de rendre les champs de données brutes éditables. Les données peuvent donc être modifier, et le passe sanitaire/2D-Doc sera régénéré lors de l'appui sur le bouton \texttt{VALIDER MODIFICATIONS}. Le processus de validation se relancera automatiquement.
+
+\subsection{Export d'un code}
+L'outil \texttt{2DMatrix-Scan} offre la possibilité de télécharger le code en cours d'utilisation (après des modifications par exemple). Le type de code généré correspond au type de code scanné. C'est à dire qu'un QRCode sera généré si c'est un passe sanitaire qui a été scanné, mais un Datamatrix sera généré si le scan a porté sur un 2D-Doc créé par l'outil \texttt{2DMatrix-Create}. Dans le cas d'un code lambda (ni passe sanitaire, ni 2D-Doc), le code généré sera, par défaut, un QRCode.
+
+

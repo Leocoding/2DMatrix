@@ -1,0 +1,31 @@
+\section{2DMatrix-Create}\label{create}
+
+\subsection{Création d'un Datamatrix}
+Le formulaire permet de générer un datamatrix, certaines valeurs de champs peuvent être choisi arbitrairement tel que le nom et le prénom mais d'autres champs doivent contenir une valeur parmi celles qui sont proposées. Les informations qui sont a renseignées dans le formulaire sont : 
+
+\begin{itemize}
+    \item \texttt{Nom} : Donnée composée de 0 à 38 caractères de type alphanumérique.
+    \item \texttt{Prénom} : Donnée composée de 0 à 20 caractères de type alphanumérique.
+    \item \texttt{Date de naissance} : Donnée indiquant la date de naissance.
+    \item \texttt{Pays de naissance} : Donnée composée de 2 caractères de type alphanumérique 
+    \\parmi la liste de pays proposée.
+    \item \texttt{Genre} : Donnée composée de 1 caractère de type alphanumérique 
+    \\parmi la liste de genre proposée.
+    \item \texttt{Numéro du diplôme} : Donnée composée de 0 à 20 caractères de type alphanumérique
+    \\parmi la liste de genre proposée. 
+    \item \texttt{Niveau de diplôme} : Donnée composée de 1 caractère de type numérique
+    \\parmi la liste des diplômes proposée.
+    \item \texttt{Type de diplôme} : Donnée composée de 2 caractères de type alphanumérique
+    \\parmi la liste de type de diplôme proposée. 
+    \item \texttt{Domaine} : Donnée composée de 0 à 30 caractères de type alphanumérique.
+    \item \texttt{Mention} : Donnée composée de 0 à 30 caractères de type alphanumérique.
+    \item \texttt{Spécialité} : Donnée composée de 0 à 30 caractères de type alphanumérique.
+    \item \texttt{Chiffrer données} : Permet de chiffrer les données afin d'être ininterprétable par les autres scans
+    \item \texttt{Sélectionner un certificat} : Donnée composée d'un identifiant de certificat sur 4 caractères parmi une liste
+    d'identifiant de certificat proposée.
+\end{itemize}
+
+Après avoir renseigné toutes ces informations, le bouton \texttt{Valider} permet de générer le datamatrix avec les informations renseignées et la signature conformément au protocole 2D-DOC. Il est possible d'exporter le datamatrix en cliquant sur le bouton \texttt{Télécharger}.
+
+\subsection{Revoquer un Datamatrix}
+Le menu de révocation d'un datamatrix est accessible en cliquant sur le lien \texttt{Gestion Blacklist} depuis le menu de création d'un datamatrix. Pour révoquer un datamatrix, il est nécessaire de le fournir à l'outil pour qu'il puisse récupérer directement la signature et l'ajouter dans les champs pour ajouter la signature dans la liste de révocation (ou la retirer). Vous pouvez donc ensuite choisir en cliquant sur les boutons \texttt{Ajouter} ou \texttt{Supprimer}.

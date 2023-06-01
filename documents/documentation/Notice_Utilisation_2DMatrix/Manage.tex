@@ -1,0 +1,114 @@
+\section{2DMatrix-Manage}
+\subsection{Partie super administrateur}\label{managesupadm}
+\subsubsection{Création d'un Organisme}
+L'une des premières étapes est de créer un Organisme, qui servira à générer les 2D-Doc authentifiant des documents officiels comme les diplômes par exemple.
+
+Avec ce formulaire, on crée un organisme mais également un compte administrateur associé à ce dernier :
+\begin{center}
+    Organisme
+\end{center}
+\begin{itemize}
+    \item \texttt{Identifiant organisme} : Un identifiant unique sur 4 caractères stocké en majuscule.
+    \item \texttt{Nom de l'organisme} : Le nom complet de l'organisme.
+    \item \texttt{Pays de l'organisme}
+    \item \texttt{Ville de l'organisme}
+\end{itemize}
+\begin{center}
+    Compte administrateur organisme
+\end{center}
+\begin{itemize}
+    \item \texttt{Nom d'utilisateur}: Le nom d'utilisateur pour l'administrateur de l'organisme créé
+    \item \texttt{Mot de passe} : Le mot de passe de ce compte administrateur organisme
+    \item \texttt{Prénom} : Le prénom de l'administrateur organisme. 
+    \item \texttt{Nom} : Le nom de l'administrateur organisme.
+\end{itemize}
+
+\subsubsection{Affichage des Organismes}
+Les organismes existant sont affichés sous forme de vignettes affichant les informations principales de ces derniers :
+
+\begin{itemize}
+    \item \texttt{Identifiant organisme}
+    \item \texttt{Nom de l'organisme}
+    \item \texttt{Pays de l'organisme}
+    \item \texttt{Ville de l'organisme}
+    \item \texttt{Date de création }
+    \item \texttt{Nom de compte de l'administrateur organisme associé}
+\end{itemize}
+
+Une image sous forme de flèche dans chaque vignette permet \texttt{d'exporter} les informations de l'organisme en téléchargeant au format \texttt{JSON} les informations de ce dernier. Pour finir, un bouton \texttt{Exporter tous} permet de télécharger un fichier \texttt{JSON} contenant l'ensemble des organismes existants.
+
+Vous trouverez dans la sous-section \hyperref[import]{\texttt{Importation d'un Organisme}}, la syntaxe du fichier \\d'import/export.
+
+Vous trouverez en bas de page, deux formulaires pour la révocation et suppression d'organisme.
+\subsubsection{Suppression d'un Organisme}
+Le premier formulaire, permet de supprimer un organisme, c'est à dire de le retirer de la base de données mais de la laisser dans notre \texttt{TSL} afin que l'ensemble des \texttt{2D-Doc} préalablement générer par cette organisme reste valide et vérifiable par notre outil \texttt{2DMatrix-Scan}. 
+
+Le formulaire permet de choisir dans une liste déroulante un identifiant d'organisme existant.
+
+\subsubsection{Révocation d'un Organisme}
+
+Ce deuxième formulaire, permet de révoquer un organisme, c'est à dire de le supprimer de la base de donnée\footnote{Reprend le comportement du formulaire précédent.} et également de notre \texttt{TSL}. Cela implique que les \texttt{2D-DOC} générés par cet organisme sont invalidé pour notre outil \texttt{2DMatrix-Scan}.
+
+Le formulaire permet de choisir dans une liste déroulante un identifiant d'organisme existant ou un organisme déjà supprimer mais pas encore révoquer.
+
+\subsubsection{Importation d'un Organisme}\label{import}
+
+Le formulaire d'importation d'organisme permet d'ajouter des organisme grâce à un fichier \texttt{JSON} avec la même syntaxe que les organismes exportés. 
+
+\begin{center}
+    Syntaxe du fichier JSON d'import/export
+\end{center}
+
+\begin{minted}{JSON}
+{
+    "Authorities": {
+        "ID ORGANISME": {
+            "ID": "ID ORGANISME",
+            "ORGANIZATION_NAME": "NOM ORGANISME",
+            "ORGANIZATION_COUNTRY": "FR",
+            "ORGANIZATION_CITY": "VILLE ORGANISME",
+            "CREATION_DATE": "YYYY-MM-DD",
+            "ORGANIZATION_PKEY": "CLE PRIVEE ECDSA",
+            "CERTIFICATS": "CERTIFICAT ECDSA",
+            "ADMIN_ACCOUNT": {
+                "ID": "IDENTIFIANT COMPTE ADMINISTRATEUR",
+                "FIRST_NAME": "PRÉNOM ADMINISTRATEUR",
+                "LAST_NAME": "NOM ADMINISTRATEUR",
+                "USERNAME_ACCOUNT": "NOM DE COMPTE ADMINISTRATEUR",
+                "PASSWORD_ACCOUNT": "HACHE DU MOT DE PASSE"
+            }
+        }
+        "ID ORGANISME 2": {
+            "..."
+        }
+    }
+}
+\end{minted}
+
+\subsection{Partie administrateur organisme}\label{manageadmorga}
+
+\subsubsection{Création d'un compte utilisateur organisme}
+On souhaite à présent, créer un compte utilisateur organisme qui sera le compte utilisant l'outil de génération de \texttt{2D-Doc} (\texttt{2DMatrix-Create}).
+
+Voici les informations à renseigner dans le formulaire :
+\begin{itemize}
+    \item \texttt{Nom d'utilisateur}
+    \item \texttt{Mot de passe}
+    \item \texttt{Prénom}
+    \item \texttt{Nom}
+\end{itemize}
+
+Après avoir rempli les informations, cliquez simplement sur \texttt{Créer}.
+
+\subsubsection{Affichage des utilisateurs de l'organisme}
+Les utilisateurs de l'organisme auquel est rattaché le compte administrateur organisme sont affichés sous forme de vignettes affichant les informations principales de ces derniers :
+
+\begin{itemize}
+    \item \texttt{Identifiant unique du compte}
+    \item \texttt{Nom d'utilisateur}
+    \item \texttt{Prénom} 
+    \item \texttt{Nom}
+    \item \texttt{Date de création}
+\end{itemize}
+
+Une image de corbeille dans chaque vignette permet de \texttt{supprimer} le compte représenté par cette dernière.

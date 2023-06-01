@@ -1,0 +1,467 @@
+td {border: 1px solid black;}
+tr {display : none;}
+table {border-collapse: collapse;width: 100%;}
+#FieldDetails {display : none;}
+#trHead {display : table-row;text-align : center;}
+textarea {width : 440px;height : 150px;}
+img {width : 100px; height : 100px;}
+#exportedCode {
+    display:none;
+}
+#FieldDetails > div > fieldset > div {
+    overflow-wrap: anywhere;
+}
+
+div.validationDetail::after{
+    content: '';
+    width: 20px;
+    height: 20px;
+    position: relative;
+    margin-right: 10px;
+    display: inline-block;
+    vertical-align: middle;
+
+    background: url("../img/invalide.png") no-repeat 0 0;
+    background-size: 20px 20px;
+}
+
+div.validationDetail.valide::after{
+    background: url("../img/valide.png") no-repeat 0 0!important;
+    background-size: 20px 20px!important;
+}
+
+.validationDetailExp{
+    font-style: italic;
+    margin-left: 1em;
+}
+
+
+
+/* 
+ * CORPS 
+ */
+body{
+    font-family: Arial, Helvetica, sans-serif;
+    min-height: 100vh;
+    margin: 0px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+#préBody {
+    display: flex;
+    justify-content: center;
+    position: relative;
+    margin: 20px;
+    left : 0px;
+    margin-top: 50px;
+    
+}
+
+#content {
+    width: 100%;
+}
+
+#centerDIV {
+    display: flex;
+    justify-content: space-around;
+}
+
+.footBox {
+    display: none;
+    margin: 20px;
+    margin-top: 150px;
+
+}
+
+.footBox legend {
+    font-size: 20px;
+}
+
+.footBox p {
+    float: left;
+    width: 60%;
+}
+
+.footBox  img {
+    float: right;
+    width : 40%;
+    height : 100%;
+}
+
+#close {
+    position: fixed;
+    width: 60px;
+    height: 60px;
+    left: 93%;
+    top: 15%;
+    display: none;
+}
+
+#close:hover {
+    cursor: pointer;
+}
+
+#footer1:hover, #footer2:hover, #footer3:hover {
+    cursor: pointer;
+}
+/* 
+ * HEADER 
+ */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1em;
+}
+
+h1 {
+    position: fixed;
+    width: 100%;
+    background: #36304a;
+    color : white;
+    margin-top: 0px;
+    padding-left : 10px;
+    padding-top : 10px;
+    padding-bottom : 10px;
+    padding-right : 0px;
+    z-index: 3;
+}
+
+#connexion {
+    position: fixed;
+    top: 0%;
+    right: 0%;
+    width: 30%;
+    height: 57px;
+    z-index: 4;
+}
+
+#secureAcc {
+    height: 48px;
+    width: 42px;
+    position: absolute;
+    top: 7%;
+    right: -0%;
+    z-index: 2;
+    
+}
+
+#logAcc {
+    position: absolute;
+    width : fit-content;
+    border: 2px solid rgba(171,160,255,255);
+    color: rgba(171,160,255,255);
+    font-size: 15px;
+    padding : 1px;
+    padding-left: 2px;
+    border-radius:10px 0 0 10px ;
+    bottom: 6px;
+    right: -100px;
+    z-index: -1;
+    transition: all 1s ease 0s;
+    text-decoration: none;
+
+}
+
+#connexion:hover > #logAcc  {
+    right : 40px;
+
+}
+
+/*
+ * Bloc
+ */
+
+fieldset {
+    margin: 5px;
+
+}
+#firstField {
+    display : float;
+   
+}
+
+#firstField legend {      font-size: 20px;}
+#fieldScan textarea {    height : 60px;}
+
+#reader {
+    width : 60%;
+    float : left;
+}
+
+#FieldShort {
+    width : 35%;
+    float : right;
+}
+
+#brutField {
+    width: 95%;
+    margin: 5px;
+}
+
+#brutArea{
+    border : none;
+    margin-top: 0.5em;
+}
+
+#labelBrutArea{
+    margin-top: 1em;
+}
+
+#FieldDetails {
+    border : none;
+    width: 90%;
+}
+
+#contentFieldDetails {
+    display: flex;
+    justify-content: center;
+}
+
+.divDetails {
+    margin : 3%;
+}
+
+#divClair {
+    border: none;
+    width: 100%;
+    padding: 0px;
+}
+
+.divTransfo{
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    margin-top: 3%;
+}
+
+.b45ExempleExpDetail::before{
+    content: "> ";
+    margin-left: 1em;
+}
+
+.b45ExempleExpDetail{
+    font-style: italic;
+}
+
+.b45ExempleExp:not(:first-of-type):before{
+    content: '\21b3';
+    position: absolute;
+    transform: translate(-100%);
+}
+
+.b45ExempleExp:not(:first-of-type){
+    margin-top: 1em;
+}
+
+
+
+/*
+ * Boutton
+ */
+ #butMask {
+    margin-bottom: 2em;
+ }
+
+ /*
+  * Tableaux
+  */
+  table {
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 5px;
+    overflow: hidden;
+    width: 100%;
+    margin: 1em 0;
+    position: relative;
+  }
+
+td {
+    padding-top: 5px;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-bottom: 5px;
+    text-align: center;
+    border : none;
+}
+ #trHead {
+    background: #36304a;
+    color : white;
+ }
+
+ table tr:nth-child(odd){
+    background-color:#f5f5f5;
+  }
+
+  #FieldDetails tr:not(#trHead):hover{
+      background-color: #685f5f;
+      color: white;
+  }
+
+  #FieldDetails.datamatrix tr:not(#trHead):hover{
+    cursor: pointer;
+}
+  
+
+#SignatureBrut{
+    word-break: break-all;
+}
+
+
+/* 
+ * FOOTER 
+ */
+footer{
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    background-color: rgb(207, 193, 171);
+    margin-top: 1em;
+}
+
+
+button, input[type="button"],input[type="file" i]::file-selector-button{
+    margin: 0 auto;
+    margin-bottom: 1rem;
+    font-family: 'Roboto', sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    font-weight: 500;
+    color: #fff;
+    background-color: #5c5462;
+    border: none;
+    border-radius: 45px;
+    box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease 0s;
+    cursor: pointer;
+    outline: none;
+    padding: 1em;
+}
+
+#reader__dashboard_section_fsr>span{
+    display: none;
+}
+
+button:hover,input[type="button"]:hover,input[type="file" i]::file-selector-button:hover{
+    background-color: #7e7478;
+    box-shadow: 0px 15px 20px rgba(0, 0, 0, 0.4);
+    color: #fff;
+    transform: translateY(-7px);
+}
+
+input[type="file" i]::file-selector-button{
+    margin: 2em;
+}
+#reader__filescan_input{
+    width: auto!important;
+    max-width: 100%;
+}
+
+#reglesDiv{
+    margin-top: 2em;
+}
+
+
+#goToTransfoDetails{
+    text-align: center;
+    color: #5c5462;
+    cursor: pointer;
+}
+
+#expliVerifPass, #expliVerif2D {
+    display: none;
+}
+
+#butModifAv{
+    margin: 0;
+    margin-top: 2em;
+}
+
+@media (ORIENTATION : portrait) {
+    #connexion {
+        display: none;
+    }
+
+    h1 {    font-size: 400%;    }
+    h2 {    font-size: 250%;    }
+
+    #préBody {
+        margin-top: 100px;
+        min-height: 90vh;
+    }
+    
+    #content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    fieldset {margin : 0px;}
+    fieldset > legend {font-size: 190%;}
+
+    #fieldScan {
+        display: flex;
+        flex-direction: column;
+    }
+    #centerDIV {
+        flex-direction: column;
+        height : 65%;
+
+    }
+
+    #reader {
+        width: 100%;
+        min-height : 45%;
+    }
+
+    #FieldShort {
+        width: 100%;
+        height : 45%;
+        padding : 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    
+    #FieldShort div {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    #FieldShort div input { 
+        font-size: 28px; 
+        text-align: center;    
+    }
+    #FieldShort div p { font-size: 30px;    }
+
+    #fieldScan textarea { height: 18%; }
+    #fieldScan p, #labelBrutArea { font-size: 25px; }
+
+    h3 {font-size: 30px;}
+
+    button, input[type="button"],input[type="file" i]::file-selector-button{
+        font-size: 22px;
+        width: 30%;
+    }
+
+    #reader__dashboard_section_swaplink { font-size: 28px;}
+    #reader__filescan_input { font-size: 25px;}
+
+    #reglesDiv , #regleNbDosesInput { 
+        font-size: 25px;
+    }
+
+    table,
+  tbody,
+  tr,
+  td {
+    display: block!important;
+    width: 100%!important;
+  }
+    
+} 

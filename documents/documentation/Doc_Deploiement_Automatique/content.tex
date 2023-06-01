@@ -1,0 +1,265 @@
+\section{Introduction}
+\label{introduction}
+
+Ce document a pour but d'expliciter la mise en place du déploiement automatique d'un serveur web sur une machine virtuelle, depuis une instance Gitlab.
+
+Nous utiliserons l'instance Gitlab du département d'informatique :
+
+\url{https://gitlab-dpt-info-sciences.univ-rouen.fr/}
+
+Nous prendrons comme racine du serveur web le répertoire \texttt{/var/www/html}.
+
+
+\section{Prérequis}
+Avant toute chose, nous devons disposer d'un accès en SSH à la VM via un compte possédant les droits \texttt{sudo} (que nous appelerons \texttt{sudouser}) et d'un utilisateur ayant au minimum le rôle de \texttt{Maintainer} sur Gitlab (pour pouvoir utiliser les options de CI/CD).
+
+Nous devons vérifier que nous disposons sur la VM, des paquets nécessaires:
+
+\begin{itemize}
+    \item git (permettant de récupérer le code depuis l'instance Gitlab)
+    \item apache2 (le serveur web)
+    \item acl (afin de définir des droits spécifiques sur les dossiers/fichiers par utilisateur)
+\end{itemize}
+
+
+Si un paquet n'est pas installé sur la VM, il suffit de l'installer avec :
+
+    \begin{minted}{bash}
+sudouser@VM$ sudo apt install <paquet>    
+    \end{minted}
+
+
+\section{Création compte utilisateur}
+
+\subsection{Ajout de l'utilisateur \texttt{git-ci}}
+Afin de contrôler au maximum les actions effectuées sur le serveur, toute manipulation du git depuis la VM passera par un utilisateur dédié que l'on va appeler \texttt{git-ci} :
+
+    \begin{minted}{bash}
+sudouser@VM$ sudo adduser git-ci
+    \end{minted}
+
+Nous pouvons utiliser un mot de passe simple car nous le retirerons plus tard.
+
+Cet utilisateur disposera par défaut d'un répertoire personnel, utilisé pour stocker les clefs ssh.
+
+\subsection{Attribution des droits}
+Pour pouvoir déployer le serveur web dans le répertoire \texttt{/var/www/html}, \texttt{git-ci} doit pouvoir disposer de droits supplémentaires.
+Afin de ne pas modifier les droits par défaut de ce répertoire, nous allons donner des droits à notre utilisateur en utilisant les \texttt{ACL}:
+
+    \begin{minted}{bash}
+sudouser@VM$ sudo setfacl -m u:git-ci:-wx /var/www/html
+    \end{minted}
+
+Cette commande va modifier les droits pour l'utilisateur  \texttt{git-ci} (\texttt{u:git-ci}) sur le répertoire \texttt{/var/www/html} afin qu'il puisse créer et modifier les fichiers lors du déploiement (\texttt{w}), ainsi qu'accéder au répertoire (\texttt{x}). Le droit de lecture n'est pas nécessaire dans notre cas. Nous ne lui donnons donc pas (\texttt{-}).
+
+\section{Gestion des connexions ssh}
+\subsection{Création des clefs ssh}
+\subsubsection{Clefs ssh pour accéder au dépôt depuis la VM}
+Tout d'abord, connectons-nous la VM avec l'utilisateur \texttt{git-ci}.
+
+Afin de cloner le dépôt sur la machine virtuelle, ou bien récupérer les nouvelles versions du code, nous utiliserons une connexion ssh entre la VM et le serveur où se trouve Gitlab.
+
+Pour se faire nous allons générer une paire de clefs privée/publique à l'aide de la commande suivante :
+
+    \begin{minted}{bash}
+git-ci@VM$ ssh-keygen    
+    \end{minted}
+
+Le chemin par défaut est \texttt{/home/git-ci/.ssh/id\_rsa} et est automatiquement pris en compte. Validez le avec la touche \texttt{ENTRER}, puis laissez la passphrase vide afin quelle ne soit pas demandée à chaque connexion.
+
+2 fichiers seront alors créés dans le répertoire \texttt{/home/git-ci/.ssh}:
+
+    \begin{itemize}
+         \item \texttt{/home/git-ci/.ssh/id\_rsa} qui correspond à la clef privée\\
+         \item \texttt{/home/git-ci/.ssh/id\_rsa.pub} qui correspond à la clef publique\\
+    \end{itemize}
+
+Nous utiliserons la clef publique plus tard, lors de la configuration du dépôt sur Gitlab.
+
+
+\subsubsection{Clefs ssh pour accéder à la VM depuis l'instance Gitlab}
+Lors d'un push sur la branche voulue, une connexion ssh sera créée depuis l'instance Gitlab, vers notre serveur, afin de pouvoir exécuter un pull.
+
+Nous devons donc générer une clef privée qui sera enregistrée sur Gitlab, et une clef publique qui elle, sera pour la VM.
+
+Nous allons réutiliser la commande 
+    \begin{minted}{bash}
+git-ci@VM$ ssh-keygen    
+    \end{minted}
+
+Cette fois nous n'allons pas garder le chemin par défaut, et choisir \texttt{/home/git-ci/.ssh/git}
+
+Encore une fois, nous laisserons les passphrases vides.
+
+Nous aurons alors 2 nouveaux fichiers créés dans le répertoire \texttt{/home/git-ci/.ssh}:
+
+    \begin{itemize}
+         \item \texttt{/home/git-ci/.ssh/git} qui correspond à la clef privée\\
+         \item \texttt{/home/git-ci/.ssh/git.pub} qui correspond à la clef publique\\
+    \end{itemize}
+
+Il faut maintenant autoriser les connexions à l'utilisateur \texttt{git-ci} via cette paire de clefs. Pour cela nous allons ajouter la clef publique au fichier \texttt{/home/git-ci/.ssh/authorized\_keys}:
+
+    \begin{minted}{bash}
+git-ci@VM$ cat ~/.ssh/git.pub >> .ssh/authorized_keys
+    \end{minted}
+
+
+\subsection{Ajout de la Deploy key}
+Nous allons ajouter la clef publique contenue dans \texttt{/home/git-ci/.ssh/id\_rsa.pub} à notre dépôt distant.
+
+Pour cela, nous affichons le contenu du fichier afin de le copier:
+
+    \begin{minted}{bash}
+git-ci@VM$ cat ~/.ssh/id_rsa.pub    
+    \end{minted}
+
+Nous nous rendons ensuite sur l'interface web de Gitlab \footnote{\hyperref[introduction]{cf Introduction}}, puis dans l'espace dédié à notre projet et dans \texttt{Settings $>$ Repository $>$ Deploy Keys}. Nous renseignons un nom, et nous collons la clef publique dans le champ \texttt{Key}. 
+
+Comme cette clef ne va nous servir qu'à cloner le dépôt et effectuer des pulls et non pas pour push, nous n'avons pas besoin d'autoriser l'écriture via celle-ci.
+
+On valide ensuite l'ajout.
+
+\section{Paramétrage du dépôt sur la VM}
+
+Maintenant que nos clefs permettant de joindre le dépôt distant depuis la VM sont en place, nous pouvons ajouter notre dépôt sur la VM.
+
+En tant que \texttt{git-ci}, nous nous rendons dans le dossier du serveur web : \texttt{/var/www/html}.
+
+Il y a 2 manières d'ajouter un dépôt:
+\begin{itemize}
+\item soit avec un \texttt{git clone} afin de récupérer un projet déjà existant et le rapatrier localement
+\item soit avec \texttt{git init} qui permet de générer un dépôt vide mais en ajoutant comme \texttt{origin} le dépôt distant
+\end{itemize}
+
+La commande \texttt{git clone} créera un sous-dossier dans le serveur web, tant dis qu'initialiser un nouveau dépôt avec \texttt{git init} le créera à la racine (\texttt{/var/www/html}) et les fichiers seront accessibles sans passer par un sous-dossier.
+
+\textbf{git clone :}
+
+    \begin{minted}[breaklines]{bash}
+git-ci@VM$ git clone <url de clonage ssh>
+# par exemple pour un membre de m1info du département : git clone git@gitlab-dpt-info-sciences.univ-rouen.fr:m1info/xxxxx.git
+git-ci@VM$ cd xxxxx/ # où xxxxx est le nom du dépôt git
+    \end{minted}
+
+
+\bigskip
+\textbf{git init :}
+
+    \begin{minted}[breaklines]{bash}
+git-ci@VM$ git init
+git-ci@VM$ git remote add -f origin <url de clonage ssh>
+# par exemple pour un membre de m1info du département : git remote add -f origin git@gitlab-dpt-info-sciences.univ-rouen.fr:m1info/xxxxx.git
+    \end{minted}
+
+
+
+Dans le cas où nous ne voulons déployer qu'un seul sous dossier ou alors ne pas déployer la totalité du dépôt, nous pouvons utiliser, après avoir initilisé notre dépôt, \texttt{git sparse-checkout} afin de définir des patterns de fichiers/dossiers à choisir (ou à exclure). Le système peut être mis en parallèle avec le fichier .gitignore permettant de ne pas prendre compter les modifications effectuées sur certains fichiers, lors d'un \texttt{git add}.
+
+
+Pour l'activer :
+
+    \begin{minted}{bash}
+git-ci@VM$ git sparse-checkout set
+    \end{minted}
+
+
+Pour ajouter un sous-dossier à prendre en compte lors d'un pull:
+
+    \begin{minted}{bash}
+git-ci@VM$ git sparse-checkout add <dossier>
+    \end{minted}
+
+
+
+Enfin, il ne reste plus qu'à tester la configuration du dépôt à l'aide de la commande
+
+    \begin{minted}{bash}
+git-ci@VM$ git pull origin main
+    \end{minted}
+
+
+
+\section{Ajout du déploiement}
+\subsection{Création des variables}
+Afin de limiter la visibilité des informations, nous allons utiliser des variables. Pour cela, il suffit de se rendre sur l'interface web de Gitlab \footnote{\hyperref[introduction]{cf Introduction}}, dans \texttt{Settings $>$ CI/CD $>$ Variables}
+
+Nous y créons les variables suivantes :
+
+    \begin{tabular}{l|p{10cm}}
+        SRV\_DEPLOY\_DIR & Définit le répertoire de déploiement. Dans notre exemple \texttt{/var/www/html} \\
+        SRV\_GITUSER& Correspond à l'utilisateur créé au début, utilisé pour effectuer le déploiement (\texttt{git-ci})\\
+        SRV\_IP & Correspond à l'adresse ip ou au domaine du serveur sur lequel le serveur web est hébergé\\
+        SRV\_PORT& Est le port utilisé pour la connexion ssh\\
+        SSH\_PRIVATE\_KEY & Correspond à la clef privé contenu dans \texttt{/home/git-ci/.ssh/git} (attention à bien prendre les indicateurs de début et fin de la clef).
+    \end{tabular}
+
+
+
+
+\subsection{Ajout du fichier .gitlab-ci.yml}
+Une fois les 5 variables ajoutées, nous pouvons ajouter le fichier yml définissant le déploiement automatique.
+
+Pour cela, il suffit de se rendre sur l'interface web de Gitlab \footnote{\hyperref[introduction]{cf Introduction}} puis dans la rubrique \texttt{CI/CD $>$ Editor}.
+
+On choisi dans le menu déroulant la branche sur laquelle on veut ajouter le déploiement automatique.
+
+Puis dans l'éditeur, on colle le contenu suivant:
+
+    \begin{minted}[breaklines]{yaml}
+before_script:
+  - 'which ssh-agent || ( apk update && apk add openssh-client )'
+  - mkdir -p ~/.ssh
+  - eval $(ssh-agent -s)
+  - echo "$SSH_PRIVATE_KEY" | ssh-add -
+  - ssh-keyscan -H -p $SRV_PORT $SRV_IP >> ~/.ssh/known_hosts
+    
+deploy_staging:
+  type: deploy
+  environment:
+    name: staging
+  script:
+    - ssh $SRV_GITUSER@$SRV_IP "cd $SRV_DEPLOY_DIR && git fetch && git checkout main && git pull origin main && exit"
+  only:
+    - main
+    \end{minted}
+
+
+\textbf{Explications :}\\
+La partie \texttt{before\_script} est exécutée avant le script et concerne le paramétrage de l'image docker (utilisée pour exécuter le déploiement), afin d'y installer le client d'openssh grâce au gestionnaire de paquet de l'image alpine (\texttt{apk}), et y ajouter notre clef privée.
+
+La partie \texttt{script} est ensuite lancé.
+
+Une connexion est créée vers notre VM, puis l'utilisateur se rend dans le dossier du serveur web, change la branche pour remettre la branche main (dans le cas ou une autre branche aurait été déployée), et exécute un pull depuis le dépôt distant vers la branche locale.
+
+Le déploiement n'est lancé que lorsqu'un push est détecté sur la branche précisée dans \texttt{only}, ici \texttt{main}.
+
+
+
+
+
+\section{Sécurisation}
+\subsection{Suppression mot de passe}
+Une fois tous les paramétrages effectués, nous pouvons supprimer le mot de passe de l'utilisateur \texttt{git-ci}, en se connectant avec un utilisateur disposant des droits \texttt{sudo} et en exécutant la commande suivante :
+
+
+    \begin{minted}{bash}
+sudouser@VM$ sudo passwd -d git-ci    
+    \end{minted}
+
+
+\subsection{Suppression des fichiers de clefs git et git.pub}
+Il est dangereux de laisser la clef privée permettant de se connecter à un serveur, sur le serveur lui-même. 
+
+Nous pouvons donc sauvegarder les clefs générée ailleurs que sur la VM, afin de pouvoir reconfigurer facilement, puis supprimer les fichiers \texttt{git} et \texttt{git.pub} du répertoire \texttt{/home/git-ci/.ssh}. 
+
+En effet, la clef publique est déjà ajoutée au fichier \texttt{/home/git-ci/.ssh/authorized\_keys} et la clef privée a été ajoutée dans la variable \texttt{SSH\_PRIVATE\_KEY} via l'interface web de Gitlab et n'ont plus de raison de rester dans le dossier \texttt{/home/git-ci/.ssh}.
+
+\subsection{Sécurisation accès .git depuis un navigateur}
+Le dossier .git peut être accessible depuis un navigateur, comme toute ressource disponible sur le serveur web. Il faut donc en empêcher l'accès.
+
+On pourrait ajouter une règle via un \texttt{DirectoryMatch} et une expression régulière, afin d'interdire l'accès au contenu du répertoire \texttt{.git}, mais le module d'apache, \texttt{ModSecurity} configuré de la manière indiquée dans le document de sécurisation d'un serveur, permet d'interdire l'accès automatiquement. 
+
+En effet, \texttt{ModSecurity} utilise une règle \texttt{REQUEST\_FILENAME}\footnote{définie dans le fichier \texttt{/usr/share/modsecurity-crs/rules/REQUEST-930-APPLICATION-ATTACK-LFI.conf}} qui analyse la requête afin de déterminer si un élément est présent dans une liste de répertoires/fichiers sensibles \footnote{définie dans le fichier \texttt{/usr/share/modsecurity-crs/rules/restricted-files.data}}, et qui contient notemment le dossier \texttt{.git} et le fichier \texttt{.gitignore}.
+
+Toute tentative d'accès, qui se verrait bloquée, sera par défaut enregistrée dans le fichier de log d'erreur d'apache (\texttt{/var/log/apache/error.log}).

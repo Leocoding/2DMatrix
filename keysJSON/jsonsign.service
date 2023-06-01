@@ -1,0 +1,9 @@
+[Unit]
+Description=Mise à jour de la signature du fichier JSON contenant la liste des révocations et des autorités
+
+[Service]
+Type=simple
+ExecStart=/var/www/html/keysJSON/syncSign.sh
+
+[Install]
+WantedBy=default.target

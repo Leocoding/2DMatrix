@@ -1,0 +1,111 @@
+\section{Préliminaire}
+\subsection{Prérequis}
+Nous procéderons ici à l'installation d'un serveur apache 2.4 sur une machine virtuelle tournant sous Ubuntu 21.04 .  Le gestionnaire de paquet ici est Apt, si vous êtes sous Fedora référé vous à dnf. Nous utiliserons également l'éditeur de texte \texttt{nano} (préinstallé sur ubuntu) mais il est possible d'utiliser n'importe quel autre.
+
+\subsection{Connexion ssh}
+La connexion ssh (pour Secure Shell) a pour but d'établir une connexion sécurisée (chiffrée) entre votre machine réelle (le client) et une machine distante (le serveur), ici une machine virtuelle. Cette connexion va vous permettre d'accéder à votre machine virtuelle, depuis votre shell sur votre machine réelle. \\
+Par convention, dans notre document nous noterons les commandes à exécuter sur notre machine réelle sous la forme : 
+\begin{minted}{bash}
+user@client:~$ COMMANDE
+\end{minted}
+et les commandes à exécuter sur notre machine virtuelle sous la forme : 
+\begin{minted}{bash}
+admin@serveur:~$ COMMANDE
+\end{minted}
+Normalement openssh est installé par défaut sur votre machine réelle, dans le cas contraire la commande suivante le fera :
+\begin{minted}{bash}
+user@client:~$ sudo apt install openssh-client
+\end{minted}
+
+Pour établir une connexion ssh entre votre machine réelle et virtuelle, ouvrez un terminal sur votre machine réelle et tapez la commande suivante : 
+\begin{minted}[breaklines]{bash}
+ssh <user>@<ip> #remplacer <user> par le nom de l'utilisateur et <ip> par l'ip de votre machine.
+#par exemple  :
+user@client:~$ ssh administrateur@10.130.108.30
+\end{minted}
+Indiquez ensuite votre mot de passe et vous voila connecté !\\
+Si vous avez changé le port par défaut, vous devrez préciser le port à la connexion. 
+\begin{minted}{bash}
+ssh -p <port> <user>@<ip>
+#par exemple  :
+user@client:~$ ssh -p 3456 administrateur@10.130.108.30
+\end{minted}
+
+Pour sécuriser d'avantage la connexion ssh, il est possible d'utiliser des clefs ssh.
+
+Pour se faire nous allons générer une paire de clefs privée/publique à partir de la machine réelle (utilisée pour effectuer la connexion) à l'aide de la commande suivante :
+
+    \begin{minted}{bash}
+user@client:~$ ssh-keygen    
+    \end{minted}
+
+Le chemin par défaut est \texttt{$\sim$/.ssh/id\_rsa} et est automatiquement pris en compte par le démon ssh. Validez avec la touche \texttt{ENTRER}, puis laissez la passphrase vide afin quelle ne soit pas demandée à chaque connexion.
+
+2 fichiers seront alors créés dans le répertoire \texttt{.ssh}:
+
+    \begin{itemize}
+         \item \texttt{$\sim$/.ssh/id\_rsa} qui correspond à la clef privée\\
+         \item \texttt{$\sim$/.ssh/id\_rsa.pub} qui correspond à la clef publique\\
+    \end{itemize}
+Il ne reste plus qu'à ajouter la clef publique sur le serveur distant pour qu'il autorise la connexion:
+
+\begin{minted}{bash}
+user@client:~$ ssh-copy-id -i ~/.ssh/id_rsa.pub [-p <port>] admin@serveur
+\end{minted}
+
+Le paramètre \texttt{-i} permet de spécifier la clef publique à envoyer. Le paramètre du port est facultatif mais et nécessaire dans le cas où le port par défaut du service \texttt{ssh} a été modifié.
+
+Une fois cette commande tapée, le mot de passe est demandé afin d'authentifier a connexion mais ne sera plus utile les prochaines fois.
+
+On peut interdire les connexion par mot de passe en modifiant le fichier de configuration du service sshd : \texttt{/etc/ssh/sshd\_config} afin de changer la valeur de \texttt{PasswordAuthentication}:
+
+\begin{minted}{text}
+PasswordAuthentication no
+\end{minted}
+
+Un redémarrage du service est nécessaire afin d eprendre en compte les modifications:
+\begin{minted}{bash}
+sudo systemctl restart sshd
+\end{minted}
+
+Toute connexion via mot de passe sera dorénavant impossible et seul l'authentification par clef ssh sera acceptée.
+
+
+
+
+%Peut être parler ici d'un snapshot ?
+
+\subsection{Installation d'Apache2}
+Nous allons ici voir comment installer un serveur apache sur notre VM. Pour ce faire il nous faut installer le service apache avec la commande suivante : 
+\begin{minted}{bash}
+admin@serveur:~$ sudo apt install apache2
+\end{minted}
+
+Une fois apache installé, voici quelques commandes pouvant vous être utiles :  
+\begin{minted}[breaklines]{bash}
+admin@serveur:~$ systemctl status apache2 #vous indique l'état du service apache
+admin@serveur:~$ sudo systemctl reload apache2 #permet de recharger la configuration d'apache
+admin@serveur:~$ sudo systemctl restart apache2 #permet de relancer apache
+\end{minted}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

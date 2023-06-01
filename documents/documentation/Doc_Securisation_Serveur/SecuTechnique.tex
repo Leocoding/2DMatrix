@@ -1,0 +1,375 @@
+\section{Sécurisation d'Apache}
+
+
+\subsection{Désactiver la navigation dans les répertoires}
+Quand quelqu'un visitera votre site web hébergé sur votre serveur, il sera par défaut en mesure d'afficher tout le répertoire et fichiers disponible sur le serveur Apache. Un attaquant pourra facilement visualiser n'importe quel fichier et obtenir des informations sensibles. Pour éviter que cela se produise, nous allons désactiver l'option permettant cette navigation. Pour se faire éditons le fichier de configuration du service apache : 
+\begin{minted}{bash}
+admin@serveur:~$ admin@serveur:~$ sudo nano /etc/apache2/apache2.conf
+\end{minted}
+Recherchez le paragraphe \texttt{$<$Directory /var/www$>$...$<$/Directory$>$} et modifiez ce paragraphe pour qu'il ressemble à ça : 
+\begin{minted}{bash}
+<Directory /var/www/>
+        Options -FollowSymLinks
+        AllowOverride None
+        Require all granted
+</Directory>
+\end{minted}
+
+Cela aura pour effet de supprimer l'option \texttt{Indexes}. Toute requête sur un dossier sans spécifier de fichier, se verra redirigée vers une erreur 403.
+
+Encore une fois, pour appliquer les modifications, redémarrez le service apache :
+\begin{minted}{bash}
+admin@serveur:~$ sudo systemctl restart apache2
+\end{minted}
+
+\subsection{Installation de ModSecurity}
+ Pour protéger notre serveur Web de diverses attaques telles que l’injection SQL, les scripts intersites, le piratage de session, la force brute et de nombreux autres exploits, nous allons utiliser ModSecurity \footnote{\url{https://coreruleset.org/}}. Il s'agit d'un module d'Apache spécialisé dans la sécurité. Commençons par installer ce module : 
+ \begin{minted}{bash}
+admin@serveur:~$ sudo apt-get install libapache2-mod-security2
+\end{minted}
+
+Vérifions si le module est actif : 
+ \begin{minted}{bash}
+admin@serveur:~$ sudo apachectl -M | grep security
+\end{minted}
+Vous devriez avoir la réponse suivante :
+\begin{minted}{bash}
+admin@serveur:~$ security2_module (shared)
+\end{minted}
+
+Si la commande ne retourne rien, cela signifie que le module n'est pas activé. Pour y remédier on peut utiliser la commande suivante:
+
+\begin{minted}{bash}
+admin@serveur:~$ sudo a2enmod security2
+\end{minted}
+
+On peut relancer la commande précédente afin de vérifier de nouveau l'activation.
+
+Nous allons maintenant activer les règles de sécurité en utilisant le fichier de configuration recommandé : 
+ \begin{minted}[breaklines]{bash}
+admin@serveur:~$ sudo cp /etc/modsecurity/modsecurity.conf-recommended /etc/modsecurity/modsecurity.conf # copie le ficher de configuration
+admin@serveur:~$ sudo nano /etc/modsecurity/modsecurity.conf
+\end{minted}
+Dans le fichier modsecurity.conf, nous allons maintenant changer la règle : \\ \texttt{SecRuleEngine DetectionOnly} en \texttt{SecRuleEngine On} .\\
+Fermer ensuite l'éditeur. Nous allons maintenant télécharger les règles de sécurité de la fondation OWASP. Elles permettent de sécuriser un serveur web pour le protéger contre le top 10 des vulnérabilités web défini par l'OWASP\footnote{\url{https://owasp.org/www-project-top-ten/}}. Pour ce faire, effectuez les commandes suivantes : 
+ \begin{minted}[breaklines]{bash}
+admin@serveur:~$ sudo rm -rf /usr/share/modsecurity-crs #supprimer le dossier de règles existant
+admin@serveur:~$ sudo git clone https://github.com/coreruleset/coreruleset.git /usr/share/modsecurity-crs # télécharge les dernières règles de ModSecurity. 
+\end{minted}
+
+Nous allons ensuite mettre en application ces règles. Pour ce faire, déplaçons-nous dans le dossier \emph{/usr/share/modsecurity-crs} et renommons le fichier de configuration.
+ \begin{minted}[breaklines]{bash}
+cd /usr/share/modsecurity-crs
+admin@serveur:~$ sudo mv crs-setup.conf.example crs-setup.conf
+\end{minted}
+
+Nous allons maintenant devoir modifier le fichier de configuration d'apache pour y indiquer le chemin des règles. Pour se faire éditons le fichier suivant : 
+ \begin{minted}[breaklines]{bash}
+admin@serveur:~$ sudo nano /etc/apache2/mods-enabled/security2.conf
+#Et ajoutez-y les lignes suivantes avant la balise de fin </IfModule>
+IncludeOptional /usr/share/modsecurity-crs/*.conf
+IncludeOptional /usr/share/modsecurity-crs/rules/*.conf
+\end{minted}
+Une fois fait, enregistrez et fermez le fichier.
+Nous allons pouvoir activer les modifications et redémarrer le service apache :
+ \begin{minted}[breaklines]{bash}
+admin@serveur:~$ a2enmod headers # active le module d'en-têtes Apache utilisé par certaines règles de l'OWASP.
+admin@serveur:~$ sudo systemctl restart apache2 # redémarre le service Apache.
+\end{minted}
+
+
+%\color{red} VOIR POUR TESTER LE MODULE, les tests de ne fonctionne peut à cause du https. site des tests : \\
+% https://blog.eduonix.com/networking-and-security/setup-mod_security-firewall-ubuntu/
+
+
+\color{black}
+
+\subsection{Installation de Fail2ban}
+Toute invite de mot de passe accessible au public est susceptible d'attirer des tentatives de force brute de la part d'utilisateurs et de robots malveillants comme le port SSH. \\
+La mise en place fail2ban peut aider à atténuer ce problème. Lorsque les utilisateurs échouent à plusieurs reprises à s'authentifier auprès d'un service (ou à se livrer à d'autres activités suspectes), fail2ban peut émettre des interdictions temporaires sur l'adresse IP incriminée en modifiant dynamiquement la politique de pare-feu en cours d'exécution.
+Pour installer Fail2ban : 
+ \begin{minted}[breaklines]{bash}
+admin@serveur:~$ sudo apt install fail2ban
+admin@serveur:~$ sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+\end{minted}
+La deuxième commande permet de copier le fichier jail.conf dans jail.local. Cela empêchera nos modifications d'être écrasées si une mise à jour de package fournit un nouveau fichier par défaut. Le service fail2ban lit d'abord le fichier .conf puis le fichier.local, cela permet aussi d'avoir une sauvegarde intacte du fichier de configuration en cas de soucis avec le .local . \\
+
+Pour commencer, nous devons ajuster le fichier de configuration fail2ban utilisé pour déterminer les journaux d'application à surveiller et les actions à entreprendre lorsque des entrées incriminées sont trouvées. 
+ \begin{minted}[breaklines]{bash}
+admin@serveur:~$ sudo nano /etc/fail2ban/jail.local
+\end{minted}
+Vous retrouvez dans les premières ligne les paramètres suivants : 
+\begin{center}
+\begin{tabular}{l|p{10cm}}
+    ignoreip & Liste blanche d'IP (Par défaut en commentaire) \\
+    bantime & Le temps de bannissement d'un hôte \\
+    findtime & Un hôte est banni s'il a généré "maxentry" durant un "findtime"\\
+    maxretry & Nombre de tentatives avant bannissement\\
+\end{tabular}    
+\end{center}
+Nous laissons le choix des valeurs pour les différentes variable. Voici un exemple possible : 
+\begin{center}
+\begin{tabular}{l|p{10cm}}
+    ignoreip & Ajoutez votre ip \\
+    bantime & 24h\\
+    findtime & 10m\\
+    maxretry & 3\\
+\end{tabular}    
+\end{center}
+
+
+Ce qui nous intéresse dans un premier lieu, c'est d'activer fail2ban sur le port ssh de la machine. Pour ce faire, dans le fichier de configuration rechercher la section sshd suivante :
+
+ \begin{minted}[breaklines]{bash}
+[sshd]
+
+# To use more aggressive sshd modes set filter parameter "mode" in jail.local:
+# normal (default), ddos, extra or aggressive (combines all).
+# See "tests/files/logs/sshd" or "filter.d/sshd.conf" for usage example and details.
+#mode   = normal
+port    = ssh #port à bloquer au moyen des règles iptables ;
+logpath = %(sshd_log)s # l'emplacement des fichiers de log à surveiller
+backend = %(sshd_backend)s #moteur de surveillance des logs.
+\end{minted}
+
+Et modifier la section pour y ajouter la valeur \emph{enabled} et modifier \emph{port}: 
+ \begin{minted}[breaklines]{bash}
+enabled  = true
+port    = ssh # indiquez ssh si le port est par défaut (22) sinon indiquer le port précis que vous utilisez
+\end{minted}
+
+Maintenant vous pouvez redémarrer fail2ban et constatez que la prison SSH est active : 
+ \begin{minted}[breaklines]{bash}
+admin@serveur:~$ sudo service fail2ban restart
+admin@serveur:~$ sudo fail2ban-client status 
+admin@serveur:~$ sudo fail2ban-client status sshd # Pour plus de détails.
+\end{minted}
+
+Si vous avez activé un \hyperref[MDP]{mot de passe apache sur une application web}, vous pouvez aussi rajouter la prison apache suivante afin de permettre à fail2ban d'analyser également les tentatives de connexion via le module d'authentification d'apache : 
+
+\begin{minted}[breaklines]{bash}
+[apache]
+enabled  = true
+port     = http,https
+filter   = apache-auth
+logpath  = /var/log/apache*/*error.log
+\end{minted}
+Il existe bien d'autre prison susceptible d'être intéressante à activer comme apache-badbots, -overflows ... .
+
+
+\subsection{Masquer la version d'apache}
+Régulièrement, des listes de failles associées à des versions d'un outil/d'une application sont mis en ligne pour prévenir les utilisateurs des risques. Car oui, dévoiler ces failles permet de connaître les vulnérabilités des systèmes et logiciels utilisés dans une entreprise, et permet de réfléchir à leurs éventuelles conséquences et de prendre rapidement des décisions pour s’en protéger. Ceci, en ajustant les pare-feux par exemple ou en surveillant la mise à disposition des patchs de sécurité. Malheureusement, cela permet aussi à des individus de rentrer plus facilement sur un système. \\
+C'est pourquoi nous devons masquer la version d'apache que nous utilisons, ainsi que l'OS disponible sur notre VM, pour ainsi éviter qu'un hacker n'ait qu'a simplement à utiliser les failles connues sur la version de notre apache/OS. Pour ce faire, nous allons  éditer le fichier de configuration de la sécurité principal d’Apache disponible au chemin suivant : \\ \texttt{/etc/apache2/conf-enabled/security.conf}
+Pour se faire nous utiliserons l'éditeur nano. 
+\begin{minted}{bash}
+admin@serveur:~$ sudo nano /etc/apache2/conf-enabled/security.conf
+\end{minted}
+Mettez ensuite la ligne \texttt{ServerTokens OS} en commentaire en rajouter un \# devant( \texttt{\#ServerTokens OS}) et rajouter la ligne suivante \texttt{ServerTokens Prod}\footnote{\url{https://httpd.apache.org/docs/2.4/fr/mod/core.html\#servertokens}}. \\
+Toujours dans le même fichier mettez la ligne suivante en commentaire \texttt{ServerSignature On}. Et dé-commentez la ligne \texttt{\#ServerSignature Off}\footnote{\url{https://httpd.apache.org/docs/2.4/fr/mod/core.html\#serversignature}}. \\
+Enregistrer ensuite votre fichier avec \emph{ctrl + x} , et tapez \emph{y} pour valider.
+
+Pour appliquer les modifications, redémarrez le service apache :
+\begin{minted}{bash}
+admin@serveur:~$ sudo systemctl restart apache2
+\end{minted}
+
+
+
+
+\subsection{Sécurisation de l'accès à un dossier d'une appli web}
+\subsubsection{Mot de passe sur Apache}\label{MDP}
+Ici le mot de passe ne protège pas Apache, mais les pages web disponibles sur le serveur rendant nécessaire un login et un mot de passe pour avoir accès à la page\footnote{\url{https://httpd.apache.org/docs/2.4/fr/howto/auth.html}}. Mais alors pourquoi protéger la page Web avec un mot de passe ? Les raisons sont nombreuses : des données sensibles sur la page, la page n'est pas prête et vous ne voulez pas la rendre visible publiquement. \\
+Quoi qu'il en soit nous allons voir ici comment s'y prendre. \\
+Nous prendrons ici l'exemple d'un dossier \emph{/var/www/html/sensible/}, nous le protégerons d'un mot de passe. 
+Commençons par créer un dossier pour stocker le fichier de mot de passe apache. Le dossier peut être n'importe où et porter n'importe quel nom.
+\begin{minted}{bash}
+admin@serveur:~$ sudo mkdir -p /etc/apache2/pass
+admin@serveur:~$ sudo touch /etc/apache2/pass/.htpasswd
+\end{minted}
+
+Dans la suite de cette partie, l'utilisateur créé n'existera que pour l'application web et ne fera pas parti des utilisateurs du système.
+
+Nous allons donc ajouter l'utilisateur qui sera autorisé à accéder à \emph{/sensible}. Nous devons utiliser la commande \texttt{htpasswd} pour cela :
+\begin{minted}[breaklines]{bash}
+admin@serveur:~$ sudo htpasswd /etc/apache2/pass/.htpasswd <user> #remplacer <user> par un nom d'utilisateur au choix
+\end{minted}
+Entrez ensuite un mot de passe pour l'utilisateur créé. Et constatez l'ajout de l'utilisateur au fichier : 
+\begin{minted}{bash}
+admin@serveur:~$ cat /etc/apache2/pass/.htpasswd 
+\end{minted}
+ Nous devons à présent demander à apache de protéger le dossier 
+\emph{/sensible}. Pour cela, il nous faut éditer le fichier de configuration apache : 
+\begin{minted}{bash}
+admin@serveur:~$ sudo nano /etc/apache2/apache2.conf
+\end{minted}
+
+On y ajoute le contenu suivant:
+\begin{minted}{text}
+<Directory /var/www/html/sensible>
+        AuthType Basic
+        AuthName "Protected Content for Client"
+        AuthUserFile /etc/apache2/pass/.htpasswd
+        Require valid-user
+</Directory>
+\end{minted}
+
+Le paramètre \texttt{AuthType} permet de change le type d'authentification : Basic (user/mot de passe), Digest (authentification par hashage) ou Form (permettant d'utiliser un formulaire html).
+
+L'attribut \texttt{AuthName} permet de définir l'identifiant de l'authentification et est affiché dans la fenêtre d'authentification.
+
+Le paramètre \texttt{AuthUserFile} permet de préciser le fichier contenant les identifiants de connexion créé précédemment.
+
+L'attribut \texttt{Require} peut être modifié afin de n'accepter les authentifications seulement pour un utilisateur en particulier avec par exemple : \texttt{Require user nomutilisateur}
+
+Sauvegardez vos modifications, redémarrez le service apache et voila le dossier /sensible est protégé par un mot de passe. Tout fichier/dossier s'y trouvant sera alors également protégé. 
+
+\subsubsection{Utilisation d'un certificat}
+\textbf{Création du CA (Certificate Authority)}
+
+Pour pouvoir protéger un dossier d'une application web à l'aide d'un certificat, il faut dans un premier temps mettre en place une autorité de certification (\texttt{CA}) qui sera l'élément racine de nos différents certificats.
+
+Pour cela, on va utiliser l'outil OpenSSL\footnote{\url{https://www.openssl.org/docs/manmaster/man1/}} afin de générer un certificat auto-signé qui fera office de certificat racine.
+\newpage
+On commence par générer une clé privée \texttt{ECDSA}\footnote{\url{https://www.openssl.org/docs/man1.0.2/man1/ecparam.html}} sur la courbe \texttt{prime256v1}. On choisit ce format pour respecter les différents algorithmes de chiffrement du protocole 2D-Doc et des passes sanitaires. De plus, la taille des clés est plus petite que RSA ce qui permet d'optimiser le le stockage de ces dernières.
+\begin{minted}[breaklines]{bash}
+admin@serveur:~$ sudo openssl ecparam -genkey -name prive256v1 -noout -out private-key.pem
+\end{minted}
+
+\begin{tabular}{l|p{10cm}}
+    ecparam & Commande pour le paramétrage ECDSA.\\
+    -genkey &  Option pour demander la génération d'une clé privée.\\
+    -name & Permets de spécifier le nom de la courbe elliptique, ici \texttt{prime256v1}. \\
+    -noout & Pas de sortie supplémentaire. \\
+    -out private-key.pem & Nom du fichier contenant la clé privée ECDSA.\\
+\end{tabular}
+
+Notre clé privée se trouve ainsi dans le fichier \texttt{private-key.pem}
+
+Ensuite, on créer notre certificat racine auto-signé avec la clé générée précédemment\footnote{\url{https://www.openssl.org/docs/man1.0.2/man1/openssl-req.html}}.
+\begin{minted}[breaklines]{bash}
+admin@serveur:~$ sudo openssl req -new -x509 -key private-key.pem -out certificate.pem -days 356 -subj "/C=FR/O=2DMatrix/CN=2DMP"
+\end{minted}
+
+\begin{tabular}{l|p{10cm}}
+    req & Commande de création de certificat.\\
+    -new & Créer une demande de requête\\
+    -x509 & Permets de donner en sortie un certificat x509 auto signé.\\
+    -key & Permets de spécifier la clé privée générer précédemment.\\
+    -out & Nom du fichier de sortie contenant le certificat du CA.\\
+    -days & Nombre de jours de validité du certificat.\\
+    -subj & Permets de spécifier les informations sur le CA\\
+\end{tabular}
+
+\begin{itemize}
+    \item C (Country): Ville de votre CA.
+    \item O (Organisme): Nom complet de votre CA.
+    \item CN (Common Name) : Nom de code de votre CA.
+\end{itemize}
+
+On obtient donc notre certificat racine dans le fichier \texttt{certificate.pem}. Ce dernier est valide 365 jours (standard) et contient les informations de notre autorité (pays, nom complet et nom de code). 
+
+Il faut conserver ce certificat et la clé associée sur votre serveur. Ce dernier servira à délivrer des certificats signés par votre autorité à vos utilisateurs.
+
+\newpage
+\textbf{Mise en place de l'authentification forte SSL/TLS}
+
+Après avoir créé votre \texttt{CA}, vous pouvez modifier la configuration \texttt{Apache} afin de protéger l'accès d'un dossier de votre serveur web avec accès via un certificat décerné par cette dernière.
+
+Nous devons donc à présent demander à apache de protéger le dossier 
+\emph{/sensible}. Pour cela, il nous faut éditer le fichier de configuration du \texttt{VirtualHost} \footnote{\url{https://httpd.apache.org/docs/2.4/fr/ssl/ssl_howto.html}} : 
+\begin{minted}{bash}
+admin@serveur:~$ sudo nano /etc/apache2/sites-enabled/000-default-le-ssl.conf
+\end{minted}
+
+On ajoute le contenu suivant dans le \texttt{Virtual Host} :
+
+\begin{minted}{text}
+SSLVerifyClient none
+SSLCACertificateFile "/var/www/html/CA/certificate.pem"
+SSLProtocol -all +TLSv1.2
+
+<Directory "/var/www/html/sensible">
+    SSLVerifyClient require
+    SSlVerifyDepth 1
+</Directory>
+\end{minted}
+
+La ligne \texttt{SSLVerifyClient none} spécifie que la vérification client n'est pas activée par défaut et donc que les pages du site ne sont pas protégés en terme d'accès.
+
+Le paramètre \texttt{SSLCACertificateFile} spécifie le chemin vers le certificat de votre \texttt{CA}.
+
+Le paramètre \texttt{SSLProtocol} avec comme valeur \texttt{-all +TLSv1.2} force l'utilisation du protocole en version 1.2 car la version par défaut ne supporte pas cette fonctionnalité (Authentification Forte \texttt{SSL/TLS}).
+
+On rajoute également un paramétrage sur un dossier \texttt{Apache} spécifique. (Ici, le dossier \texttt{sensible})
+
+Dans ce dernier, on spécifie deux choses. D'abord, on active la vérification client avec \texttt{SSLVerifyClient require}. Ensuite, on choisit la profondeur (\texttt{SSlVerifyDepth}) de vérification. Dans notre cas, 1 signifie que le certificat que l'utilisateur présente au navigateur doit être l'enfant directe de notre CA.
+
+Sauvegardez vos modifications, redémarrez le service apache et le dossier \texttt{/var/www/html/sensible} est protégé par la demande d'un certificat de votre \texttt{CA}. Tout fichier/dossier s'y trouvant sera alors également protégé. 
+
+\newpage
+\textbf{Génération du certificat client}
+
+Après avoir mis en place cette sécurité avec authentification forte, il faut générer un certificat client pour que les utilisateurs puissent accéder à ce dossier protégé. Pour cela, on crée un certificat signé par votre \texttt{CA}.
+
+On génère de nouveau une clé privée\footnote{\url{https://www.openssl.org/docs/man1.0.2/man1/ecparam.html}} \texttt{ECDSA} :
+\begin{minted}[breaklines]{bash}
+sudo openssl ecparam -name prime256v1 -genkey -noout -out superAdmin.key
+\end{minted}
+
+Ensuite, on crée une requête de certificat\footnote{\url{https://www.openssl.org/docs/man1.0.2/man1/req.html}} comme pour notre \texttt{CA} mais cette fois-ci sans l'option \texttt{x509} et donc on récupère un fichier \texttt{.csr} (\texttt{Certificate Signing Request}) et pas un certificat signé. C'est également pour cela que l'on n'a pas besoin de spécifier le temps de validité ou le contenu du certificat pour le moment.
+\begin{minted}[breaklines]{bash}
+sudo openssl req -new -key superAdmin.key -out superAdmin.csr
+\end{minted}
+
+Maintenant, on va signer ce certificat avec notre \texttt{CA}.\footnote{\url{https://www.openssl.org/docs/man1.0.2/man1/x509.html}} De plus, au moment de la signature, \texttt{OpenSSL} va créer réellement ce nouveau certificat. Vous devez donc remplir les informations demandées (Pays, Nom, Nom de code...). Pour finir une passphrase (mot de passe) sera demandée, cette dernière n'est pas obligatoire mais sera demandée pour l'installation du certificat dans le navigateur. Tapez la passphrase de votre choix ou bien tapez sur la touche \texttt{Enter} si vous n'en voulez pas. Nous conseillons cependant l'utilisation de cette dernière.
+\begin{minted}[breaklines]{bash}
+sudo openssl x509 -req -in superAdmin.csr -CA /var/www/html/CA/certificate.pem -CAkey /var/www/html/CA/private-key.pem  -CAcreateserial -out superAdmin.crt -days 365 -sha256
+\end{minted}
+
+\begin{tabular}{l|p{10cm}}
+    x509 & Commande d'affichage et de signature de certificat. \\
+    -req & Permets de spécifier que l'on attend un \texttt{csr} en entrée.\\
+    -CA & Le certificat racine. (CA)\\
+    -CAkey & La clé privée de votre CA.\\
+    -CAcreateserial & Créer un fichier serial nécessaire à la commande. (place dans la hiérarchie du certificat client)\\
+    -out & Le nom du fichier \texttt{crt} contenant le certificat\\
+    -days & Nombre de jours de validité du certificat.\\
+    -sha256 & L'algorithme de hachage utilisé avant la signature.//
+\end{tabular}
+
+Pour terminer, on exporte notre fichier au format \texttt{.p12} (fichier contenant certificat et clé privée) afin de l'utiliser dans le navigateur pour s'authentifier.
+
+\begin{minted}[breaklines]{bash}
+sudo openssl pkcs12 -export -inkey superAdmin.key -in superAdmin.crt -certfile /var/www/html/CA/certificate.pem -out superAdmin.p12
+\end{minted}
+
+\begin{tabular}{l|p{10cm}}
+    pkcs12 & Commande pour gérer les fichiers de type \texttt{PKCS12}. \\
+    -export & Permets de spécifier que l'on veut créer un fichier \texttt{PKCS12} et non en parser un.\\
+    -inkey & Clé privée associé au certificat.\\
+    -in & Le certificat client crée précédemment.\\
+    -certfile & Le certificat de votre \texttt{CA}.\\
+    -out & Le nom du fichier \texttt{.p12} contenant le certificat et la clé privée\\
+\end{tabular}
+
+Pour finir, il vous suffit simplement d'installer votre certificat \texttt{p12} sur votre navigateur en suivant la procédure\footnote{\url{https://www.ibm.com/docs/fr/elm/6.0?topic=dashboards-importing-certificates-configuring-browsers-report-builder-reports}} décrit pour les navigateurs \texttt{Internet Explorer, Chrome} des sections \texttt{Importez un fichier .p12.} ou en suivant la procédure\footnote{\url{https://support.globalsign.com/digital-certificates/digital-certificate-installation/install-client-digital-certificate-firefox-windows}} pour le navigateur \texttt{Firefox}.
+
+Après avoir installé votre \texttt{p12}, une fenêtre apparaîtra lorsque vous tenterez d'accéder au dossier protégé  \texttt{sensible} et vous n'aurez qu'à autoriser l'utilisation de votre certificat client. Vous aurez donc accès à l'ensemble du dossier via une authentification forte \texttt{SSL/TLS}.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

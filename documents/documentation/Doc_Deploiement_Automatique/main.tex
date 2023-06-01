@@ -1,0 +1,47 @@
+\documentclass[oneside,12pt]{scrartcl}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{eso-pic}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{minted}
+\usepackage{parskip}
+\usepackage{xcolor}
+\usepackage{silence}
+\usepackage[hidelinks]{hyperref}
+\usepackage{arydshln}
+
+
+\newcommand*{\escape}[1]{\texttt{\textbackslash#1}}
+\newcommand{\insererText}{\textcolor{red}{[INSERER TEXTE ICI]}}
+\newcommand{\insererTextT}[1]{\insererText\ \textcolor{red}{#1}}
+\newcommand{\insererImage}{\textcolor{red}{[INSERER IMAGE ICI]}}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for the horizontal lines, change thickness here
+
+
+\renewcommand{\thesection}{\Roman{section}} %redefini apparence nom sections (affichage chiffres romains)
+
+
+
+\begin{document}
+
+\input{titlePage}
+
+\thispagestyle{empty} %pour retirer la 1ere page de la pagination
+
+\newpage
+
+\input{versions}
+
+\newpage
+\pagenumbering{arabic} %remet la pagination pour le sommaire
+{
+\renewcommand*\contentsname{Sommaire}
+\tableofcontents
+}
+
+\clearpage
+
+\input{content}
+
+\end{document}

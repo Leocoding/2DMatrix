@@ -1,0 +1,339 @@
+body{
+    font-family: Arial, Helvetica, sans-serif;
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+
+
+/* titres */
+header {
+    position: relative;
+    width: 100%;
+    background: #36304a;
+    color : white;
+    margin-top: 0px;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+}
+
+header .headerLine{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+header #firstLine{
+    display: flex;
+}
+
+header .headerLine :nth-child(1){
+    margin-left: 0.5em;
+}
+
+header .headerLine :last-child{
+    margin-right: 0.5em;
+}
+
+header #secondLine{
+    background-color: #5c5462;
+}
+
+
+#bl {
+    font-weight: bold;
+    text-decoration: none;
+    color: white;
+    margin-right: 1em;
+}
+
+#bl::after{
+    content: " ";
+    position: relative;
+    display: block;
+    margin-top: 5px;
+    height: 2px;
+    width: 100%;
+    background: white;
+    transform: scale(0, 1);
+    transform-origin: left;
+    transition: transform ease-in-out 250ms;
+}
+
+#bl:hover::after{
+    transform: scale(1, 1);
+}
+
+
+#createContainer .noCertificate{
+    background: #5c5462;
+    padding: 2em;
+    display: flex;
+    justify-content: center;
+    border-radius: 50px;
+    color: white;
+    box-shadow:rgb(0 0 0 / 20%) 3px 8px 3px -2px, rgb(0 0 0 / 14%) 3px 8px 4px 0px, rgb(0 0 0 / 12%) 3px 8px 8px 0px;
+    width: fit-content;
+    margin: 0 1em;
+}
+
+
+/* partie user */
+#userContainer{
+    display: flex;
+    align-items: center;
+}
+
+#userInfoContainer{
+    text-align: right;
+}
+
+#userContainer p{
+    margin: 0;
+    font-weight: bold;
+}
+
+#userContainer img{
+    width: 50px;
+    height: 50px;
+    margin-left: 10px;
+}
+
+#userContainer a{
+    color: white;
+}
+
+
+/*  CREATE */
+
+#status{
+    display: none;
+    color: rgb(255, 0, 0);
+    font-weight: bold;
+    background: rgb(202, 154, 154);
+    padding: 0.5em;
+    text-align: center;
+}
+
+#status.visible{
+    display: block;
+}
+
+
+ 
+#createContainer{
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    margin: 2em;
+    width: 100%;
+}
+
+#createContainer>input{
+    margin: 0;
+}
+
+#createForm{
+    display: flex;
+    flex-direction: column;
+    align-items: baseline;
+    width: 12em;
+    background: #5c5462;
+    padding: 2.5em;
+    color: white;
+    border-radius: 50px;
+    box-shadow:rgb(0 0 0 / 20%) 3px 8px 3px -2px, rgb(0 0 0 / 14%) 3px 8px 4px 0px, rgb(0 0 0 / 12%) 3px 8px 8px 0px;
+}
+
+#createForm input:not(#chiffrement),
+#createForm select{
+    width: 100%;
+}
+
+#centralDiv{
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    flex: 0;
+    min-width: 15%;
+}
+
+#createForm > :nth-child(2n){
+    margin-bottom: 0.5em;
+}
+
+ /*datamatrix */
+
+#datamatrixContainer{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#datamatrixContainer a{
+    max-width: fit-content;
+    margin-top: 1em;
+}
+
+#datamatrixContainer #canvasContainer{
+    background: #5c5462;
+    border-radius: 50px;
+    position: relative;
+    color: white;
+    width: 20em;
+    height: 20em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#datamatrixContainer #canvasContainer canvas{
+    width: calc(100% - 6em);
+    height: fit-content;
+}
+
+#datamatrixContainer #canvasContainer p{
+    display: block;
+    position: absolute;
+    bottom: 35%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    white-space: nowrap;
+}
+
+#datamatrixContainer #canvasContainer p.hide{
+    display: none;
+}
+
+
+/* Blacklist */
+
+#bodyContent{
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    padding: 1em 0;
+}
+
+#bodyContent #readerContainer{
+    width: 400px;
+}
+
+
+
+
+
+
+
+/* 
+ * FOOTER 
+ */
+footer{
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    background-color: rgb(207, 193, 171);
+    margin-top: 1em;
+}
+
+/*    ----------- Formulaire -------------- */
+
+input.invalid, select.invalid {
+    border: solid red;
+}
+
+
+#telecharge{
+    background-color: #5f5f5f!important;
+    cursor: not-allowed!important;
+}
+
+#telecharge.active{
+    background-color: #5c5462!important;
+    cursor: pointer!important;
+    text-decoration: none;
+}
+
+
+
+#telecharge, button, input[type="button"],input[type="submit"],input[type="file" i]::file-selector-button{
+    margin: 0 auto;
+    margin-bottom: 1rem;
+    font-family: 'Roboto', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    font-weight: 500;
+    color: #fff;
+    background-color: #5c5462;
+    border: none;
+    border-radius: 45px;
+    box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease 0s;
+    cursor: pointer;
+    outline: none;
+    padding: 1em;
+    font-size: initial;
+}
+
+#reader__dashboard_section_fsr>span{
+    display: none;
+}
+
+#telecharge.active:hover,button:hover,input[type="button"]:hover,input[type="submit"]:hover,input[type="file" i]::file-selector-button:hover{
+    background-color: #7e7478;
+    box-shadow: 0px 15px 20px rgba(0, 0, 0, 0.4);
+    color: #fff;
+    transform: translateY(-7px);
+}
+
+input[type="file" i]::file-selector-button{
+    margin: 2em;
+}
+#reader__filescan_input{
+    width: auto!important;
+    max-width: 100%;
+}
+
+.footBox {
+    display: none;
+    margin: 20px;
+    margin-top: 150px;
+
+}
+
+.footBox legend {
+    font-size: 20px;
+    color: black;
+}
+
+.footBox p {
+    float: left;
+    width: 60%;
+}
+
+.footBox  img {
+    float: right;
+    width : 40%;
+    height : 100%;
+}
+
+#close {
+    position: fixed;
+    width: 60px;
+    height: 60px;
+    left: 93%;
+    top: 20%;
+    display: none;
+}
+
+#close:hover {
+    cursor: pointer;
+}
+
+#footer1:hover, #footer2:hover, #footer3:hover {
+    cursor: pointer;
+}

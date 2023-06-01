@@ -1,0 +1,8 @@
+{
+    "db": {
+        "dbname": "2DMATRIX_DATABASE",
+        "dbhost": "your_host",
+        "dbuser": "your_username",
+        "dbpass": "your_password"
+    }
+}

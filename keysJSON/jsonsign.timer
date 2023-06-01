@@ -1,0 +1,13 @@
+[Unit]
+Description=Mise à jour de la signature du fichier JSON contenant la liste des révocations et des autorités
+RefuseManualStart=no
+RefuseManualStop=no
+
+[Timer]
+Persistent=true
+OnBootSec=120
+OnCalendar=*-*-* 23:59:00
+Unit=jsonsign.service
+
+[Install]
+WantedBy=default.target

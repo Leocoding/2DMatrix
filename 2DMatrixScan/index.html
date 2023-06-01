@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>2DMatrix Scan</title>
+  <link rel="stylesheet" type="text/css" href="css/styleJsScan.css">
+</head>
+<body>
+    <h1>Projet Datamatrix</h1>
+    <div id="connexion">
+        <img id='secureAcc' src="img/secure.jpg" alt="connexion image">
+        <a id="logAcc" href="https://srv-dpi-proj-datamatrix-srv1.univ-rouen.fr">connexion</a>
+    </div>
+    <div id="préBody" >
+    <div id="content">
+        <h2>Outil de Scan</h2>
+
+        <!-- A supprimer apres presentation-->
+        <a href="/codes_test/passes/mickey.jpg" download>Cliquez ici pour télécharger un exemple de pass sanitaire</a>
+
+        
+        <fieldset id="fieldScan">
+            <legend>Scannez votre Pass Sanitaire ou 2D-doc: </legend>
+            <!-- Bloc d'insertion à intégrer --> 
+            <div id="centerDIV">
+                <div id="reader" ></div>
+                <fieldset id="FieldShort">
+                    <legend>Données contenues (vue réduite) :</legend>
+                    <!-- Données afficher possiblement à adapter-->
+                    
+                </fieldset>
+            </div>
+            <div id="labelBrutArea">Données brutes :</div>
+            <textarea id="brutArea" readonly style="width:100%;" rows="10"></textarea>
+            <input id="exportBtn" type="button" value="Exporter" onclick="exportCode('qrcode')"/>
+            <div id="exportedCode">
+                <canvas id="exportedCanvas"></canvas>
+            </div>
+            
+        </fieldset>
+        <h3>Souhaitez vous voir ce que contient réellement votre datamatrix/Pass sanitaire ?</h3>
+        <button id='butMask' type="button" onclick="affichageDetail()">Montrez moi !</button>
+        <div id="contentFieldDetails"><fieldset id='FieldDetails'>
+            <p id="expliVerifPass">Pour valider un pass sanitaire, nous vérifions dans un premier temps l'authenticité des données à l'aide de la signature et de l'identifiant de l'autorité contenu dans le pass (qui permet de récupérer le bon certificat). Ensuite nous regardons si le pass respecte bien les règles sanitaires définies ci-dessous. </p>
+            <p id="expliVerif2D">Pour valider un 2d-doc, nous vérifions l'authenticité des données à l'aide de la signature et des identifiants de l'autorité et du certificat contenu dans l'en-tête du 2D-doc.</p>
+            <legend><h3>Explications de fonctionnement :</h3></legend>
+            
+        </fieldset></div>
+    </div>
+    </div>
+    <img id="close" src="img/close.png" alt="bouton fermeture" onclick="closeAllBox()">
+    <div id="infoLegale" class="footBox">
+        <fieldset>
+            <legend>Informations légales</legend>
+            <p>
+                Projet réalisé par des étudiants de Master 1 Informatique branche sécurité à la demande de Mme. Bardet<br/>
+                BELABDOUN Billal <br/>
+                DURAND Alan <br/>
+                FONTENIL Adrien <br/>
+                MENUDE Leo<br/>
+
+            </p>
+            <img src="img/team.jpg" alt="team">
+        </fieldset>
+    </div>
+    <div id="infoProj" class="footBox">
+        <fieldset>
+            <legend>Informations sur le projet</legend>
+            <p>Notre projet se déroule dans le cadre de la matière applications informatique en première année de master informatique. Notre projet consisté à exploiter le protocole Français 2D-doc pour valider un diplôme. Pour cela nous devions créer un outil capable de lire des 2D-doc contenu dans un datamatrix et dans un second temps avoir un outil capable d'en générer. Enfin, du fait de la pandémie, nous avons ajouté à l'outil de scan la possibilité de lire et comprendre le pass sanitaire (resp. vaccinale) Européen.</p>
+            <img src="img/team.jpg" alt="team">
+        </fieldset>
+    </div>
+    <div id="fctProj" class="footBox">
+        <fieldset>
+            <legend>Fonctionnement Projet</legend>
+            <p>Le projet est constitué de 3 outils : tout d'abord vous avez l'outil 2DMatrix-Scan qui permet d'authentifier des 2d-doc (créer par l'outil create) et pass sanitaires. À la manière de TousAntiCovid-verif mais en vous apportant plus de détails et de possibilité d'actions que ce dernier. Ensuite vous avez 2DMatrix-Create permettant de créer des 2d-doc authentifiant des diplômes issue de l'enseignement supérieur. Et enfin il y a l'outil manage permettant de gérer les accès à l'outil create.</p>
+            <img src="img/team.jpg" alt="team">
+        </fieldset>
+    </div>
+    <footer>
+        <div id="footer1">
+            <h3 onclick="displayInfolegale()">Informations légales</h3>
+        </div>
+        <div id="footer2" >
+            <h3 onclick="displayInfoProj()">Information Projet</h3>
+        </div>
+        <div id="footer3">
+            <h3 onclick="displayfctProj()">Fonctionnement Projet</h3>
+        </div>
+    </footer>
+<script src="js/cbor.js"></script>
+<script src="js/base45.js"></script>
+<script src="js/html5-qrcode.min.js"></script>
+<script src="js/pako.js"></script>
+<script src="js/x509.js"></script>
+<script src="js/base32.js"></script>
+<script src="js/bwip-js.min.js"></script>
+<script src="js/cose-custom.js"></script>
+<script src="js/cryptojs.min.js"></script>
+<script src="authorities.js"></script>
+<script src="js/blacklistDCC.js"></script>
+<script src='js/countryCodes.js'></script>
+<script src='js/schemas.js'></script>
+<script src="js/blacklist-certif-content.js"></script>
+<script src="js/blacklist-certif.js"></script>
+<script src='js/decodeQR.js'></script>
+<script src='js/decode2DDoc.js'></script>
+<script src='js/modif2DDoc.js'></script>
+<script src='js/modifQRCode.js'></script>
+<script src="js/scriptScan.js"></script>
+<script src="js/scriptCSS.js"></script>
+<script>
+    //affichageDetail();
+
+    var qrboxDim = function(viewfinderWidth, viewfinderHeight) {
+        var minEdgePercentage = 0.7; // 70%
+        var minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+        var qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+        return {
+            width: qrboxSize,
+            height: qrboxSize
+        };
+    }
+
+    var html5QrcodeScanner = new Html5QrcodeScanner(
+        "reader",{ 
+            fps: 10, 
+            qrbox: qrboxDim
+        },
+        /* verbose= */ false
+    );
+    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    
+
+</script>
+</body>
+</html>
